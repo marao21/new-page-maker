@@ -125,9 +125,12 @@ function RootComponent() {
 
     async function loadSession() {
       try {
-        const { data, error } = await supabase.auth.getSession();
+        const {
+          data: { session },
+          error,
+        } = await supabase.auth.getSession();
         if (error) throw error;
-        if (isMounted) setSession(data.session);
+        if (isMounted) setSession(session);
       } catch (err) {
         if (isMounted) setError(err instanceof Error ? err : new Error(String(err)));
       } finally {
