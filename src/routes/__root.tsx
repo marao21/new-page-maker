@@ -121,24 +121,28 @@ function RootComponent() {
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadSession() {
       try {
         const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
-        setSession(data.session);
+        if (isMounted) setSession(data.session);
       } catch (err) {
-        setError(err instanceof Error ? err : new Error(String(err)));
+        if (isMounted) setError(err instanceof Error ? err : new Error(String(err)));
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     }
+
     loadSession();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
+      if (isMounted) setSession(session);
     });
 
     return () => {
+      isMounted = false;
       listener?.subscription.unsubscribe();
     };
   }, []);
