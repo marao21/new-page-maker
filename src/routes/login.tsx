@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { supabase } from "../integrations/supabase/client";
-import { useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
-export const Route = {
-  path: "/login",
+export const Route = createFileRoute("/login")({
+  head: () => ({ meta: [{ title: "Entrar — Minha Página" }, { name: "description", content: "Acesse sua conta." }] }),
   component: Login,
-};
+});
 
 export function Login() {
   const [email, setEmail] = useState("");
@@ -19,7 +19,7 @@ export function Login() {
     if (error) {
       setError(error.message);
     } else {
-      navigate("/", { replace: true });
+      navigate({ to: "/", replace: true });
     }
   }
 
