@@ -115,38 +115,26 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
   const [user, setUser] = useState(null);
   const router = useRouter();
-  const isPublicRoute = ["/login", "/register"].includes(router.state.location.pathname);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: sessionData }) => {
       setUser(sessionData.session?.user ?? null);
-      if (!sessionData.session && !isPublicRoute) {
-        router.navigate({ to: "/login", replace: true });
-      }
     });
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      if (!session && !isPublicRoute) {
-        router.navigate({ to: "/login", replace: true });
-      }
     });
 
     return () => {
       listener?.subscription.unsubscribe();
     };
-  }, [router, isPublicRoute]);
+  }, []);
 
   async function signOut() {
     await supabase.auth.signOut();
     router.navigate({ to: "/login", replace: true });
-  }
-
-  if (!user && !isPublicRoute) {
-    return <div className="flex min-h-screen items-center justify-center">Verificando autenticação...</div>;
   }
 
   return (
@@ -155,12 +143,11 @@ function RootComponent() {
         <span className="font-display text-2xl">Minha Página</span>
         <div className="flex gap-4">
           <ThemeToggle />
-          {user && (
+          {user ? (
             <Button onClick={signOut} variant="outline" size="sm">
-              Logout
+              Sair
             </Button>
-          )}
-          {!user && !isPublicRoute && (
+          ) : (
             <Button asChild variant="outline" size="sm">
               <Link to="/login">Entrar</Link>
             </Button>
