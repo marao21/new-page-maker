@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../integrations/supabase/client";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
@@ -12,6 +12,14 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: sessionData }) => {
+      if (sessionData.session?.user) {
+        navigate({ to: "/", replace: true });
+      }
+    });
+  }, [navigate]);
 
   async function handleLogin() {
     setError(null);
