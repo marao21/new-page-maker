@@ -116,13 +116,21 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-
   const [session, setSession] = useState<Awaited<ReturnType<typeof supabase.auth.getSession>> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
     async function loadSession() {
-      const { data } = await supabase.auth.getSession();
-      setSession(data.session);
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        setSession(data.session);
+      } catch (err) {
+        setError(err instanceof Error ? err : new Error(String(err)));
+      } finally {
+        setLoading(false);
+      }
     }
     loadSession();
 
@@ -135,8 +143,12 @@ function RootComponent() {
     };
   }, []);
 
-  if (session === null) {
-    return <div>Loading...</div>;
+  if (loading) {
+    return <div>Loading session...</div>;
+  }
+
+  if (error) {
+    return <div>Error loading session: {error.message}</div>;
   }
 
   if (!session) {
