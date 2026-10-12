@@ -89,7 +89,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         href: appCss,
       },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Manrope:wght@400;500;700&display=swap" },
+      {
+        rel: "stylesheet",
+        href: "https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600&family=Manrope:wght@400;500;700&display=swap",
+      },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
   }),
@@ -115,6 +118,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
   const [user, setUser] = useState(null);
   const router = useRouter();
 
@@ -144,13 +148,21 @@ function RootComponent() {
         <div className="flex gap-4">
           <ThemeToggle />
           {user ? (
-            <Button onClick={signOut} variant="outline" size="sm">
-              Sair
-            </Button>
+            <>
+              <span className="self-center text-sm text-muted-foreground">{user.email}</span>
+              <Button onClick={signOut} variant="outline" size="sm">
+                Sair
+              </Button>
+            </>
           ) : (
-            <Button asChild variant="outline" size="sm">
-              <Link to="/login">Entrar</Link>
-            </Button>
+            <>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/login">Entrar</Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/register">Criar conta</Link>
+              </Button>
+            </>
           )}
         </div>
       </header>

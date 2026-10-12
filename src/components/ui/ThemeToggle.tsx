@@ -1,29 +1,31 @@
-import React, { useEffect, useState } from "react";
-import { Toggle } from "./toggle";
+import { useEffect, useState } from "react";
 
 export function ThemeToggle() {
-  const [isDark, setIsDark] = useState(() => {
-    if (typeof window === "undefined") return false;
-    return document.documentElement.classList.contains("dark");
+  const [theme, setTheme] = useState(() => {
+    if (typeof window === "undefined") return "light";
+    return localStorage.getItem("theme") || "light";
   });
 
   useEffect(() => {
-    if (isDark) {
-      document.documentElement.classList.add("dark");
+    const root = document.documentElement;
+    if (theme === "dark") {
+      root.classList.add("dark");
     } else {
-      document.documentElement.classList.remove("dark");
+      root.classList.remove("dark");
     }
-  }, [isDark]);
+  }, [theme]);
+
+  function toggleTheme() {
+    setTheme((prev) => {
+      const newTheme = prev === "dark" ? "light" : "dark";
+      localStorage.setItem("theme", newTheme);
+      return newTheme;
+    });
+  }
 
   return (
-    <Toggle
-      aria-label="Toggle theme"
-      pressed={isDark}
-      onPressedChange={setIsDark}
-      size="sm"
-      className="ml-auto"
-    >
-      {isDark ? "Dark" : "Light"}
-    </Toggle>
+    <button onClick={toggleTheme} aria-label="Toggle theme">
+      {theme === "dark" ? "☀️" : "🌙"}
+    </button>
   );
 }
