@@ -171,10 +171,10 @@ function RootComponent() {
               <Link to="/" className="transition hover:opacity-80">
                 Início
               </Link>
-              <Link to="/#servicos" className="transition hover:opacity-80">
+              <Link to="/" hash="servicos" className="transition hover:opacity-80">
                 Serviços
               </Link>
-              <Link to="/#contato" className="transition hover:opacity-80">
+              <Link to="/" hash="contato" className="transition hover:opacity-80">
                 Contato
               </Link>
             </nav>
