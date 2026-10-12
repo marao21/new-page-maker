@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { supabase } from "../integrations/supabase/client";
-import { useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
-export const Route = {
-  path: "/register",
+export const Route = createFileRoute("/register")({
+  head: () => ({ meta: [{ title: "Cadastrar — Minha Página" }, { name: "description", content: "Crie sua conta." }] }),
   component: Register,
-};
+});
 
 export function Register() {
   const [email, setEmail] = useState("");
@@ -20,7 +20,7 @@ export function Register() {
       setError(error.message);
     } else {
       // Após o registro, navega para a página de login
-      navigate("/login", { replace: true });
+      navigate({ to: "/login", replace: true });
     }
   }
 
