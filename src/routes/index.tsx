@@ -1,7 +1,7 @@
 import { createFileRoute } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/')({
-  head: () => ({
+  head: () => ({ 
     meta: [
       { title: 'Neo-Brutalist SaaS Landing Page' },
       { name: 'description', content: 'A vibrant Neo-Brutalist SaaS landing page with #ffe17c yellow, #171e19 charcoal, and #b7c6c2 sage.' },
@@ -21,7 +21,7 @@ function Index() {
           </div>
           <span className="font-extrabold text-2xl tracking-tighter uppercase font-cabinet-grotesk">SaaS.neo</span>
         </div>
-        <nav className="hidden md:flex items-center space-x-8 font-bold text-base">
+        <nav className="hidden md:flex items-center space-x-8 font-bold text-base font-satoshi">
           <a href="#features" className="hover:underline underline-offset-4">Recursos</a>
           <a href="#how-it-works" className="hover:underline underline-offset-4">Como Funciona</a>
           <a href="#personas" className="hover:underline underline-offset-4">Para Quem</a>
@@ -30,7 +30,7 @@ function Index() {
         <div>
           <a 
             href="#cta" 
-            className="bg-black text-white px-5 py-2.5 font-bold border-2 border-black shadow-[4px_4px_0px_0px_#000000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-150 inline-block"
+            className="bg-black text-white px-5 py-2.5 font-bold border-2 border-black shadow-[4px_4px_0px_0px_#000000] hover:translate-x-1 hover:translate-y-1 hover:shadow-none transition-all duration-150 inline-block rounded-lg"
           >
             Start Free Trial
           </a>
@@ -39,7 +39,7 @@ function Index() {
 
       {/* Hero Section */} 
       <section id="hero" className="relative py-16 md:py-24 px-6 md:px-12 bg-[#ffe17c] border-b-2 border-black overflow-hidden" style={{
-        backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.12) 1.5px, transparent 1.5px)',
+        backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.1) 1.5px, transparent 1.5px)',
         backgroundSize: '32px 32px'
       }}>
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -51,7 +51,7 @@ function Index() {
             <h1 className="text-5xl sm:text-7xl lg:text-8xl font-extrabold tracking-tighter leading-none text-black font-cabinet-grotesk">
               SCALE <span className="text-transparent" style={{ WebkitTextStroke: '2px black' }}>FASTER</span> WITH AI.
             </h1>
-            <p className="text-lg sm:text-xl font-medium max-w-lg">
+            <p className="text-lg sm:text-xl font-medium font-satoshi max-w-lg">
               Transform your workflow with high-contrast neo-brutalist automation. Zero fluff, maximum output, and absolute design confidence.
             </p>
             <div className="flex flex-wrap gap-4 pt-2">
@@ -147,12 +147,12 @@ function Index() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Card A: Problem */} 
-            <div className="bg-[#f4f4f5] border-2 border-dashed border-gray-400 opacity-75 p-8 rounded-[2.5rem]">
+            <div className="bg-[#f4f4f5] border-2 border-dashed border-gray-400 opacity-70 p-8 rounded-[2.5rem]">
               <div className="inline-block bg-gray-200 border border-gray-400 text-gray-700 font-bold px-3 py-1 rounded-full text-xs mb-6">
                 OUTDATED SAAS
               </div>
               <h3 className="text-2xl sm:text-3xl font-bold font-cabinet-grotesk mb-6 text-gray-700">Standard Boring Software</h3>
-              <ul className="space-y-4 font-medium text-gray-600">
+              <ul className="space-y-4 font-medium font-satoshi text-gray-600">
                 <li className="flex items-center gap-3">
                   <span className="w-6 h-6 rounded-full bg-red-100 text-red-600 border border-red-300 flex items-center justify-center font-bold text-sm">✕</span>
                   <span>Generic gradients & invisible borders</span>
@@ -174,7 +174,7 @@ function Index() {
                 NEO-BRUTALIST POWER
               </div>
               <h3 className="text-2xl sm:text-3xl font-extrabold font-cabinet-grotesk mb-6 text-black">High-Impact Engine</h3>
-              <ul className="space-y-4 font-bold text-black">
+              <ul className="space-y-4 font-bold font-satoshi text-black">
                 <li className="flex items-center gap-3">
                   <span className="w-6 h-6 rounded-full bg-black text-[#ffe17c] border-2 border-black flex items-center justify-center font-bold text-sm">✓</span>
                   <span>High-contrast borders & crisp geometry</span>
@@ -194,7 +194,10 @@ function Index() {
       </section>
 
       {/* Feature Grid */} 
-      <section id="features" className="py-20 px-6 md:px-12 bg-[#ffe17c] border-b-2 border-black">
+      <section id="features" className="py-20 px-6 md:px-12 bg-[#ffe17c] border-b-2 border-black" style={{
+        backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.1) 1.5px, transparent 1.5px)',
+        backgroundSize: '32px 32px'
+      }}>
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-16">
             <span className="bg-white border-2 border-black px-4 py-1.5 rounded-full font-bold text-sm shadow-[4px_4px_0px_0px_#000000]">
@@ -240,7 +243,7 @@ function Index() {
                     0{idx + 1}
                   </div>
                   <h3 className="text-2xl font-extrabold font-cabinet-grotesk mb-3">{feature.title}</h3>
-                  <p className="font-medium text-gray-800">{feature.desc}</p>
+                  <p className="font-medium font-satoshi text-gray-800">{feature.desc}</p>
                 </div>
                 <div className="mt-6 pt-4 border-t-2 border-black flex items-center justify-between font-bold text-sm">
                   <span>Explore module</span>
@@ -297,7 +300,7 @@ function Index() {
                     {item.step}
                   </div>
                   <h3 className="text-2xl font-extrabold font-cabinet-grotesk mb-3 text-white">{item.title}</h3>
-                  <p className="font-medium text-gray-300">{item.desc}</p>
+                  <p className="font-medium font-satoshi text-gray-300">{item.desc}</p>
                 </div>
               ))}
             </div>
@@ -324,7 +327,7 @@ function Index() {
                   FOUNDERS & CEOs
                 </span>
                 <h3 className="text-3xl font-extrabold font-cabinet-grotesk mb-4">Visionary Leadership</h3>
-                <p className="font-medium text-black">
+                <p className="font-medium font-satoshi text-black">
                   Gain high-level oversight over all marketing and product metrics with zero operational friction.
                 </p>
               </div>
@@ -340,7 +343,7 @@ function Index() {
                   GROWTH MARKETERS
                 </span>
                 <h3 className="text-3xl font-extrabold font-cabinet-grotesk mb-4">Velocity Engineers</h3>
-                <p className="font-medium text-black">
+                <p className="font-medium font-satoshi text-black">
                   Deploy rapid A/B tested campaigns and high-converting copy assets in a fraction of the usual time.
                 </p>
               </div>
@@ -356,7 +359,7 @@ function Index() {
                   PRODUCT DEVELOPERS
                 </span>
                 <h3 className="text-3xl font-extrabold font-cabinet-grotesk mb-4 text-white">Technical Builders</h3>
-                <p className="font-medium text-gray-300">
+                <p className="font-medium font-satoshi text-gray-300">
                   Integrate robust APIs and clean micro-interactions into your tech stack without bloated dependencies.
                 </p>
               </div>
@@ -408,11 +411,11 @@ function Index() {
                   <div className="flex space-x-1 text-[#ffbc2e] mb-4 text-xl">
                     {'★'.repeat(5)}
                   </div>
-                  <p className="font-medium text-black text-lg mb-6 leading-relaxed">"{t.quote}"</p>
+                  <p className="font-medium font-satoshi text-black text-lg mb-6 leading-relaxed">"{t.quote}"</p>
                 </div>
                 <div className="pt-4 border-t-2 border-black">
                   <div className="font-extrabold font-cabinet-grotesk text-lg">{t.name}</div>
-                  <div className="text-sm font-semibold text-gray-600">{t.role}</div>
+                  <div className="text-sm font-semibold font-satoshi text-gray-600">{t.role}</div>
                 </div>
               </div>
             ))}
@@ -421,7 +424,10 @@ function Index() {
       </section>
 
       {/* Final CTA */} 
-      <section id="cta" className="py-24 px-6 md:px-12 bg-[#ffe17c] border-b-2 border-black text-center">
+      <section id="cta" className="py-24 px-6 md:px-12 bg-[#ffe17c] border-b-2 border-black text-center" style={{
+        backgroundImage: 'radial-gradient(circle, rgba(0,0,0,0.1) 1.5px, transparent 1.5px)',
+        backgroundSize: '32px 32px'
+      }}>
         <div className="max-w-4xl mx-auto space-y-8">
           <span className="bg-white border-2 border-black px-4 py-1.5 rounded-full font-bold text-sm shadow-[4px_4px_0px_0px_#000000] inline-block">
             GET STARTED TODAY
@@ -429,7 +435,7 @@ function Index() {
           <h2 className="text-5xl sm:text-7xl font-extrabold tracking-tighter font-cabinet-grotesk text-black">
             Ready to Elevate Your SaaS?
           </h2>
-          <p className="text-xl font-medium max-w-2xl mx-auto">
+          <p className="text-xl font-medium font-satoshi max-w-2xl mx-auto">
             Join over 25,000 teams scaling faster with high-contrast neo-brutalist automation. No credit card required.
           </p>
           <div className="pt-4">
@@ -453,14 +459,14 @@ function Index() {
               </div>
               <span className="font-extrabold text-xl tracking-tighter uppercase font-cabinet-grotesk text-[#ffe17c]">SaaS.neo</span>
             </div>
-            <p className="text-sm text-[#b7c6c2] font-medium">
+            <p className="text-sm text-[#b7c6c2] font-medium font-satoshi">
               Vibrant Neo-Brutalist SaaS landing page engine designed for professional confidence with a playful edge.
             </p>
           </div>
 
           <div>
             <h4 className="font-cabinet-grotesk font-extrabold text-lg text-[#ffe17c] mb-4">Product</h4>
-            <ul className="space-y-2.5 text-sm font-medium text-[#b7c6c2]">
+            <ul className="space-y-2.5 text-sm font-medium font-satoshi text-[#b7c6c2]">
               <li><a href="#features" className="hover:text-white transition-colors">Features</a></li>
               <li><a href="#how-it-works" className="hover:text-white transition-colors">Workflows</a></li>
               <li><a href="#personas" className="hover:text-white transition-colors">Personas</a></li>
@@ -470,7 +476,7 @@ function Index() {
 
           <div>
             <h4 className="font-cabinet-grotesk font-extrabold text-lg text-[#ffe17c] mb-4">Company</h4>
-            <ul className="space-y-2.5 text-sm font-medium text-[#b7c6c2]">
+            <ul className="space-y-2.5 text-sm font-medium font-satoshi text-[#b7c6c2]">
               <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
               <li><a href="#" className="hover:text-white transition-colors">Privacy Policy</a></li>
@@ -494,7 +500,7 @@ function Index() {
           </div>
         </div>
 
-        <div className="max-w-7xl mx-auto pt-8 border-t border-[#272727] flex flex-col md:flex-row justify-between items-center text-xs text-[#b7c6c2]">
+        <div className="max-w-7xl mx-auto pt-8 border-t border-[#272727] flex flex-col md:flex-row justify-between items-center text-xs text-[#b7c6c2] font-satoshi">
           <div>© {new Date().getFullYear()} Neo-Brutalist SaaS. All rights reserved.</div>
           <div className="mt-4 md:mt-0">
             <a href="mailto:contact@neobrutalism.com" className="underline hover:text-[#ffe17c]">contact@neobrutalism.com</a>
