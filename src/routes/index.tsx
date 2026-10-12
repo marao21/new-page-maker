@@ -1,4 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router';
+import heroImg from '@/assets/hero.jpg';
 
 export const Route = createFileRoute('/')({
   head: () => ({ 
@@ -70,9 +71,12 @@ function Index() {
             </div>
           </div>
 
-          {/* Browser Mockup Dashboard */} 
-          <div className="w-full">
-            <div className="bg-white border-2 border-black rounded-2xl shadow-[12px_12px_0px_0px_#000000] overflow-hidden">
+          {/* Browser Mockup Dashboard with images and boxes restored */} 
+          <div className="w-full relative">
+            <div className="absolute -top-6 -right-6 w-32 h-32 border-2 border-black bg-[#b7c6c2] shadow-[4px_4px_0px_0px_#000000] overflow-hidden hidden md:block z-20">
+              <img src={heroImg} alt="Badge preview" className="w-full h-full object-cover" />
+            </div>
+            <div className="bg-white border-2 border-black rounded-2xl shadow-[12px_12px_0px_0px_#000000] overflow-hidden relative">
               <div className="bg-black px-4 py-3 flex items-center justify-between border-b-2 border-black">
                 <div className="flex items-center space-x-2">
                   <div className="w-3.5 h-3.5 rounded-full bg-[#ff5f57] border border-black"></div>
@@ -84,6 +88,10 @@ function Index() {
                 </div>
               </div>
               <div className="p-6 space-y-6 bg-white">
+                <div className="relative w-full aspect-[16/9] border-2 border-black shadow-[4px_4px_0px_0px_#000000] overflow-hidden mb-4 group">
+                  <img src={heroImg} alt="Hero SaaS Preview" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                  <div className="absolute inset-0 bg-gradient-to-tr from-black/20 to-transparent pointer-events-none"></div>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="bg-[#b7c6c2] p-4 rounded-xl border-2 border-black shadow-[4px_4px_0px_0px_#000000]">
                     <div className="text-xs font-bold uppercase tracking-wide text-black">Monthly Revenue</div>
@@ -108,6 +116,10 @@ function Index() {
                   </div>
                 </div>
               </div>
+            </div>
+            <div className="absolute -bottom-6 -left-6 bg-[#b7c6c2] border-2 border-black p-4 shadow-[4px_4px_0px_0px_#000000] hidden sm:block max-w-xs z-20">
+              <p className="font-bold text-xs uppercase">Real-Time Sync</p>
+              <p className="text-xs font-mono mt-1">+245% productivity boost verified.</p>
             </div>
           </div>
         </div>
