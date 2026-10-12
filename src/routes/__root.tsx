@@ -7,13 +7,11 @@ import {
   HeadContent,
   Scripts,
   type ErrorComponentProps,
-  Navigate,
 } from "@tanstack/react-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { supabase } from "../integrations/supabase/client";
 
 function NotFoundComponent() {
   return (
@@ -40,9 +38,7 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: ErrorComponentProps) {
   console.error(error);
   const router = useRouter();
-  useEffect(() => {
-    reportLovableError(error, { boundary: "tanstack_root_error_component" });
-  }, [error]);
+  reportLovableError(error, { boundary: "tanstack_root_error_component" });
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -116,56 +112,6 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const [session, setSession] = useState<Awaited<ReturnType<typeof supabase.auth.getSession>> | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<Error | null>(null);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadSession() {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        if (isMounted) {
-          setSession(data.session);
-        }
-      } catch (err) {
-        if (isMounted) {
-          setError(err instanceof Error ? err : new Error(String(err)));
-        }
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadSession();
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (isMounted) {
-        setSession(session);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      listener?.subscription.unsubscribe();
-    };
-  }, []);
-
-  if (loading) {
-    return <div>Loading session...</div>;
-  }
-
-  if (error) {
-    return <div>Error loading session: {error.message}</div>;
-  }
-
-  if (!session) {
-    return <Navigate to="/login" replace />;
-  }
 
   return (
     <QueryClientProvider client={queryClient}>
