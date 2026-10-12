@@ -19,6 +19,7 @@ export function Register() {
     if (error) {
       setError(error.message);
     } else {
+      // Após o registro, navega para a página de login
       navigate({ to: "/login", replace: true });
     }
   }
