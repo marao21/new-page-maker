@@ -75,7 +75,7 @@ function Index() {
           alt="Nosso espaço"
           width={1600}
           height={1008}
-          className="aspect-[4/3] w-full rounded-2xl border border-border/50 object-cover shadow-2xl"
+          className="aspect-[4/3] w-full rounded-2xl border border-border/50 object-cover shadow-2xl transition-transform duration-300 transform hover:scale-105"
         />
       </section>
 
@@ -91,7 +91,7 @@ function Index() {
           {servicos.map((s, i) => (
             <div
               key={s.t}
-              className="bg-card/60 backdrop-blur border border-border/60 rounded-xl p-8 hover:shadow-lg hover:border-primary/40 transition-all duration-300"
+              className="bg-card/60 backdrop-blur border border-border/60 rounded-xl p-8 hover:shadow-xl hover:border-primary/40 transition-transform duration-300 transform hover:scale-105"
             >
               <span className="font-mono text-xl font-semibold text-primary">0{i + 1}</span>
               <h3 className="mt-4 text-2xl font-semibold">{s.t}</h3>
