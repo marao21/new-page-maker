@@ -50,16 +50,16 @@ function Index() {
             Um negócio próximo, com atendimento atencioso e resultados que fazem
             diferença no seu dia a dia.
           </p>
-          <div className="flex flex-col gap-4 sm:flex-row">
+          <div className="flex flex-col gap-4 sm:flex-row justify-center">
             <a
               href="#servicos"
-              className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-sm font-semibold text-primary-foreground shadow-lg transition hover:bg-primary/90"
+              className="inline-flex items-center justify-center rounded-full bg-primary px-12 py-4 text-sm font-semibold text-primary-foreground shadow-lg transition hover:bg-primary/90"
             >
               Ver serviços
             </a>
             <a
               href="#contato"
-              className="inline-flex items-center justify-center rounded-full border border-border bg-background px-8 py-4 text-sm font-semibold transition hover:bg-accent"
+              className="inline-flex items-center justify-center rounded-full border border-border bg-card px-8 py-4 text-sm font-semibold transition hover:bg-accent"
             >
               Fale conosco
             </a>
@@ -79,7 +79,7 @@ function Index() {
 
       {/* Seção de serviços */}
       <section id="servicos" className="mx-auto max-w-6xl px-6 py-16 md:py-20 bg-gradient-to-br from-background to-card rounded-lg shadow-md">
-        <div className="mb-10 text-center">
+        <div className="mb-10 text-center p-6 bg-card/50 rounded-lg">
           <h2 className="font-display text-4xl font-bold tracking-tight">O que fazemos</h2>
           <p className="mt-2 text-muted-foreground">
             Conheça nossos principais serviços e como podemos ajudar você.
