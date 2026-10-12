@@ -1,151 +1,48 @@
-import { createFileRoute } from "@tanstack/react-router";
-import hero from "@/assets/hero.jpg";
+import { createFileRoute } from '@tanstack/react-router';
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute('/')({
   head: () => ({
     meta: [
-      { title: "Minha Página — Atendimento com cuidado" },
-      {
-        name: "description",
-        content: "Conheça nossos serviços, nossa história e fale com a gente.",
-      },
-      {
-        property: "og:title",
-        content: "Minha Página — Atendimento com cuidado",
-      },
-      {
-        property: "og:description",
-        content: "Conheça nossos serviços, nossa história e fale com a gente.",
-      },
+      { title: 'Neo-Brutalism Landing Page' },
+      { name: 'description', content: 'Landing page em estilo Neo-Brutalismo utilizando cores vibrantes.' },
     ],
   }),
   component: Index,
 });
 
-const servicos = [
-  {
-    t: "Consultoria",
-    d: "Entendemos sua necessidade e indicamos o melhor caminho.",
-  },
-  {
-    t: "Projetos sob medida",
-    d: "Soluções pensadas para o seu jeito de trabalhar.",
-  },
-  {
-    t: "Acompanhamento",
-    d: "Estamos por perto em cada etapa, do início ao fim.",
-  },
-];
-
 function Index() {
   return (
-    <main className="min-h-screen bg-background font-sans text-foreground">
-      {/* Hero section */}
-      <section className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:grid-cols-2 md:py-32">
-        <div className="space-y-8">
-          <h1 className="text-5xl font-bold leading-[1.1] tracking-tight sm:text-6xl">
-            Feito com cuidado,<br />pensado para você.
-          </h1>
-          <p className="max-w-lg text-xl text-muted-foreground">
-            Um negócio próximo, com atendimento atencioso e resultados que fazem
-            diferença no seu dia a dia.
-          </p>
-          <div className="flex flex-col gap-4 sm:flex-row justify-center">
-            <a
-              href="#servicos"
-              className="inline-flex items-center justify-center rounded-full bg-primary px-12 py-4 text-sm font-semibold text-primary-foreground shadow-lg transition hover:bg-primary/90"
-            >
-              Ver serviços
-            </a>
-            <a
-              href="#contato"
-              className="inline-flex items-center justify-center rounded-full border border-border bg-card px-8 py-4 text-sm font-semibold transition hover:bg-accent"
-            >
-              Fale conosco
-            </a>
+    <main className='min-h-screen bg-[#ffe17c] font-sans text-black'>
+      <header className='sticky top-0 z-50 border-b-2 border-black bg-[#ffe17c] h-20 flex items-center justify-between p-6'>
+        <div className='w-10 h-10 bg-black'></div>
+        <nav className='flex space-x-4'>
+          <a href='#hero' className='font-bold'>Início</a>
+          <a href='#features' className='font-bold'>Recursos</a>
+          <a href='#contact' className='font-bold'>Contato</a>
+        </nav>
+        <a href='#' className='bg-black text-white py-2 px-4 rounded border border-black shadow transition-transform transform hover:translate-x-2 hover:translate-y-2'>Start Free Trial</a>
+      </header>
+
+      <section id='hero' className='grid grid-cols-2 gap-6 p-20 bg-[#ffe17c]'>
+        <div>
+          <span className='bg-white border-2 border-black rounded-full py-2 px-4'>NEW: AI Content Assistant 2.0</span>
+          <h1 className='text-8xl font-cabinet-grotesk text-black'>Cabinet Grotesk</h1>
+          <div className='flex space-x-4'>
+            <button className='bg-black text-white rounded-full py-4 px-8 shadow-[8px_8px_0px_black] transition-transform hover:-translate-y-1 hover:shadow-[4px_4px_0px_black]'>Primary Action</button>
+            <button className='bg-white text-black rounded-full py-4 px-8 border-2 border-black shadow-[4px_4px_0px_black] transition-transform hover:-translate-y-1'>Secondary Action</button>
           </div>
         </div>
-
-        <div className="relative">
-          <img
-            src={hero}
-            alt="Nosso espaço"
-            width={1600}
-            height={1008}
-            className="aspect-[4/3] w-full rounded-3xl object-cover shadow-2xl ring-1 ring-border"
-          />
+        <div>
+          <div className='bg-white border-2 border-black shadow-[8px_8px_0px_black]'><img src='browser-mockup.png' alt='Browser Mockup'/></div>
         </div>
       </section>
 
-      {/* Seção de serviços */}
-      <section id="servicos" className="mx-auto max-w-6xl px-6 py-16 md:py-20 bg-gradient-to-br from-background to-card rounded-lg shadow-md">
-        <div className="mb-10 text-center p-6 bg-card/50 rounded-lg">
-          <h2 className="font-display text-4xl font-bold tracking-tight">O que fazemos</h2>
-          <p className="mt-2 text-muted-foreground">
-            Conheça nossos principais serviços e como podemos ajudar você.
-          </p>
-        </div>
-        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {servicos.map((s, i) => (
-            <div
-              key={s.t}
-              className="group flex flex-col rounded-2xl border border-border/60 bg-card p-8 transition-all hover:border-primary/50 hover:shadow-lg"
-            >
-              <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 font-mono text-lg font-bold text-primary">
-                0{i + 1}
-              </span>
-              <h3 className="text-xl font-semibold">{s.t}</h3>
-              <p className="mt-2 flex-1 text-muted-foreground">{s.d}</p>
-            </div>
-          ))}
-        </div>
-      </section>
+      {/* Repeat for other sections (Social Proof, Problem vs Solution, etc.) */}
 
-      {/* Seção de contato */}
-      <section id="contato" className="mx-auto max-w-4xl px-6 pb-16 md:pb-24 bg-card/50 rounded-xl shadow-md backdrop-blur-sm">
-        <div className="relative rounded-xl bg-card/60 backdrop-blur border border-border/60 p-8 text-center shadow-md">
-          <h2 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
-            Vamos conversar?
-          </h2>
-          <p className="mt-2 text-muted-foreground">
-            Mande uma mensagem e respondemos rapidinho.
-          </p>
-          <a
-            href="mailto:contato@minhapagina.com"
-            className="mt-6 inline-block rounded-full bg-primary px-8 py-4 text-sm font-medium text-primary-foreground transition hover:opacity-90"
-          >
-            contato@minhapagina.com
-          </a>
-        </div>
-      </section>
-
-      {/* Rodapé */}
-      <footer className="border-t border-border/60 bg-background py-8 text-center text-sm text-muted-foreground">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-6 md:flex-row">
-          <span>
-            © {new Date().getFullYear()} Minha Página. Todos os direitos reservados.
-          </span>
-          <div className="flex gap-4 text-sm">
-            <a
-              href="https://twitter.com"
-              target="_blank"
-              rel="noreferrer"
-              className="underline transition hover:opacity-75"
-            >
-              Twitter
-            </a>
-            <a
-              href="https://instagram.com"
-              target="_blank"
-              rel="noreferrer"
-              className="underline transition hover:opacity-75"
-            >
-              Instagram
-            </a>
-            <a href="/" className="underline transition hover:opacity-75">
-              Política de Privacidade
-            </a>
-          </div>
+      <footer className='bg-[#171e19] text-white py-4 text-center'>
+        <div className='flex justify-around'>
+          <div className='py-2'>© 2023 Neo-Brutalism</div>
+          <a href='mailto:contact@neobrutalism.com' className='underline hover:text-[#ffe17c]'>contact@neobrutalism.com</a>
         </div>
       </footer>
     </main>

@@ -1,4 +1,31 @@
-/* Definição de variáveis para o tema claro (padrão) */
+/* Estilos da página Neo-Brutalismo */
+:root {
+  --primary-bg: #ffe17c;
+  --charcoal-bg: #171e19;
+  --sage-bg: #b7c6c2;
+  --white: #ffffff;
+  --black: #000000;
+  --shadow-light: 4px 4px 0px black;
+  --shadow-heavy: 8px 8px 0px black;
+  --border: 2px solid black;
+}
+
+body {
+  font-family: 'Cabinet Grotesk', sans-serif;
+  background-color: var(--primary-bg);
+}
+
+button {
+  background-color: var(--black);
+  color: var(--white);
+  border: var(--border);
+  box-shadow: 8px 8px 0px black;
+  transition: transform 0.2s;
+  &:hover {
+    transform: translate(4px, 4px);
+    box-shadow: 4px 4px 0px black;
+  }
+}
 :root {
   --background: oklch(0.98 0 0); /* Quase branco */
   --foreground: oklch(0.18 0.02 250); /* Texto escuro, levemente azulado */
