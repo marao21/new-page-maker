@@ -20,7 +20,7 @@ function Index() {
           <a href='#features' className='font-bold'>Recursos</a>
           <a href='#contact' className='font-bold'>Contato</a>
         </nav>
-        <a href='#' className='bg-black text-white py-2 px-4 rounded border border-black shadow transition-transform transform hover:translate-x-2 hover:translate-y-2'>Start Free Trial</a>
+        <a href='#' className='bg-black text-white py-2 px-4 rounded-none border-2 border-black shadow-[8px_8px_0] transition-transform transform hover:translate-x-1 hover:translate-y-1'>Start Free Trial</a>
       </header>
 
       <section id='hero' className='grid grid-cols-2 gap-6 p-20 bg-[#ffe17c]'>
@@ -28,12 +28,12 @@ function Index() {
           <span className='bg-white border-2 border-black rounded-full py-2 px-4'>NEW: AI Content Assistant 2.0</span>
           <h1 className='text-8xl font-cabinet-grotesk text-black'>Cabinet Grotesk</h1>
           <div className='flex space-x-4'>
-            <button className='bg-black text-white rounded-full py-4 px-8 shadow-[8px_8px_0px_black] transition-transform hover:-translate-y-1 hover:shadow-[4px_4px_0px_black]'>Primary Action</button>
-            <button className='bg-white text-black rounded-full py-4 px-8 border-2 border-black shadow-[4px_4px_0px_black] transition-transform hover:-translate-y-1'>Secondary Action</button>
+            <button className='bg-black text-white rounded-none py-4 px-8 border-2 border-black shadow-[8px_8px_0] transition-transform hover:translate-x-1 hover:translate-y-1'>Primary Action</button>
+            <button className='bg-white text-black rounded-none py-4 px-8 border-2 border-black shadow-[4px_4px_0] transition-transform hover:translate-x-1 hover:translate-y-1'>Secondary Action</button>
           </div>
         </div>
         <div>
-          <div className='bg-white border-2 border-black shadow-[8px_8px_0px_black]'><img src='browser-mockup.png' alt='Browser Mockup'/></div>
+          <div className='bg-white border-2 border-black shadow-[8px_8px_0]'><img src='browser-mockup.png' alt='Browser Mockup'/></div>
         </div>
       </section>
 

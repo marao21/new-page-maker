@@ -1,4 +1,30 @@
-/* Estilos da página Neo-Brutalismo */
+:root {
+  --primary-bg: #ffe17c;
+  --charcoal-bg: #171e19;
+  --sage-bg: #b7c6c2;
+  --white: #ffffff;
+  --black: #000000;
+  --shadow-light: 4px 4px 0px black;
+  --shadow-heavy: 8px 8px 0px black;
+  --border: 2px solid black;
+}
+
+body {
+  font-family: 'Cabinet Grotesk', sans-serif;
+  background-color: var(--primary-bg);
+}
+
+button {
+  background-color: var(--black);
+  color: var(--white);
+  border: var(--border);
+  box-shadow: var(--shadow-heavy);
+  transition: transform 0.2s;
+  &:hover {
+    transform: translate(4px, 4px);
+    box-shadow: var(--shadow-light);
+  }
+}
 :root {
   --primary-bg: #ffe17c;
   --charcoal-bg: #171e19;
