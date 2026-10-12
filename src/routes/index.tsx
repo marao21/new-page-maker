@@ -41,25 +41,25 @@ function Index() {
   return (
     <main className="min-h-screen bg-background font-sans text-foreground">
       {/* Hero section */}
-      <section className="relative mx-auto grid max-w-6xl items-center gap-8 px-6 py-12 md:grid-cols-2 md:gap-16 md:py-24 bg-gradient-to-tr from-primary/10 to-primary/30 rounded-b-2xl shadow-lg">
-        <div className="space-y-6">
-          <h1 className="font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
+      <section className="relative mx-auto grid max-w-6xl items-center gap-12 px-6 py-20 md:grid-cols-2 md:py-32">
+        <div className="space-y-8">
+          <h1 className="text-5xl font-bold leading-[1.1] tracking-tight sm:text-6xl">
             Feito com cuidado,<br />pensado para você.
           </h1>
-          <p className="max-w-lg text-lg text-muted-foreground">
+          <p className="max-w-lg text-xl text-muted-foreground">
             Um negócio próximo, com atendimento atencioso e resultados que fazem
             diferença no seu dia a dia.
           </p>
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-4 sm:flex-row">
             <a
               href="#servicos"
-              className="inline-flex items-center justify-center rounded-xl bg-primary px-8 py-3 text-sm font-semibold text-primary-foreground shadow-lg transition hover:opacity-90"
+              className="inline-flex items-center justify-center rounded-full bg-primary px-8 py-4 text-sm font-semibold text-primary-foreground shadow-lg transition hover:bg-primary/90"
             >
               Ver serviços
             </a>
             <a
               href="#contato"
-              className="inline-flex items-center justify-center rounded-xl border border-border bg-background px-8 py-3 text-sm font-semibold transition hover:bg-accent"
+              className="inline-flex items-center justify-center rounded-full border border-border bg-background px-8 py-4 text-sm font-semibold transition hover:bg-accent"
             >
               Fale conosco
             </a>
@@ -72,7 +72,7 @@ function Index() {
             alt="Nosso espaço"
             width={1600}
             height={1008}
-            className="aspect-[4/3] w-full rounded-3xl border border-border/50 object-cover shadow-xl"
+            className="aspect-[4/3] w-full rounded-3xl object-cover shadow-2xl ring-1 ring-border"
           />
         </div>
       </section>

@@ -51,15 +51,15 @@ export function Register() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground">
-      <div className="w-full max-w-md rounded-lg bg-card p-6 shadow">
-        <h1 className="mb-6 text-center text-2xl font-bold">Cadastrar</h1>
+      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-xl">
+        <h1 className="mb-8 text-center text-2xl font-bold">Criar conta</h1>
         <input
           type="email"
           name="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mb-4 w-full rounded border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="mb-4 w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <input
           type="password"
@@ -67,19 +67,17 @@ export function Register() {
           placeholder="Senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mb-4 w-full rounded border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="mb-6 w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <button
           onClick={handleRegister}
-          className="w-full rounded bg-primary px-3 py-2 font-semibold text-primary-foreground transition hover:bg-primary/90"
+          className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground transition hover:bg-primary/90"
         >
           Registrar
         </button>
         {message && (
           <p
-            className={`mt-4 text-sm ${
-              message.type === "error" ? "text-destructive" : "text-green-600"
-            }`}
+            className={`mt-4 text-sm ${message.type === "error" ? "text-destructive" : "text-green-600"}`}
           >
             {message.text}
           </p>
