@@ -50,16 +50,16 @@ export function Register() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center bg-background px-4 text-foreground">
-      <div className="w-full max-w-sm rounded-2xl border border-border bg-card p-8 shadow-xl">
-        <h1 className="mb-8 text-center text-2xl font-bold">Criar conta</h1>
+    <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 px-4 text-foreground">
+      <div className="w-full max-w-md rounded-3xl border border-border bg-white p-8 shadow-lg">
+        <h1 className="mb-8 text-center text-3xl font-extrabold text-gray-800">Criar conta</h1>
         <input
           type="email"
           name="email"
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mb-4 w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="mb-4 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <input
           type="password"
@@ -67,24 +67,24 @@ export function Register() {
           placeholder="Senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mb-6 w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          className="mb-6 w-full rounded-lg border border-gray-300 bg-white px-4 py-3 text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
         <button
           onClick={handleRegister}
-          className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground transition hover:bg-primary/90"
+          className="w-full rounded-lg bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-700"
         >
           Registrar
         </button>
         {message && (
           <p
-            className={`mt-4 text-sm ${message.type === "error" ? "text-destructive" : "text-green-600"}`}
+            className={`mt-4 text-sm ${message.type === 'error' ? 'text-red-600' : 'text-green-600'}`}
           >
             {message.text}
           </p>
         )}
-        <p className="mt-4 text-center text-sm text-muted-foreground">
+        <p className="mt-4 text-center text-sm text-gray-600">
           Já tem uma conta?
-          <Link to="/login" className="ml-1 font-medium text-primary underline hover:opacity-80">
+          <Link to="/login" className="ml-1 font-medium text-blue-600 underline hover:opacity-80">
             Entrar
           </Link>
         </p>
