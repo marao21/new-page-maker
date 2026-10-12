@@ -1,9 +1,14 @@
 import { useState, useEffect } from "react";
 import { supabase } from "../integrations/supabase/client";
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/login")({
-  head: () => ({ meta: [{ title: "Entrar — Minha Página" }, { name: "description", content: "Acesse sua conta." }] }),
+  head: () => ({
+    meta: [
+      { title: "Entrar — Minha Página" },
+      { name: "description", content: "Acesse sua conta." },
+    ],
+  }),
   component: Login,
 });
 
@@ -41,7 +46,7 @@ export function Login() {
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="mb-4 w-full rounded border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground"
+          className="mb-4 w-full rounded border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <input
           type="password"
@@ -49,15 +54,21 @@ export function Login() {
           placeholder="Senha"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="mb-4 w-full rounded border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground"
+          className="mb-4 w-full rounded border border-input bg-background px-3 py-2 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
         />
         <button
           onClick={handleLogin}
-          className="w-full rounded bg-primary px-3 py-2 text-primary-foreground hover:bg-primary/90"
+          className="w-full rounded bg-primary px-3 py-2 font-semibold text-primary-foreground transition hover:bg-primary/90"
         >
           Entrar
         </button>
         {error && <p className="mt-4 text-sm text-destructive">{error}</p>}
+        <p className="mt-4 text-center text-sm text-muted-foreground">
+          Não tem conta?
+          <Link to="/register" className="ml-1 font-medium text-primary underline hover:opacity-80">
+            Cadastre-se
+          </Link>
+        </p>
       </div>
     </main>
   );

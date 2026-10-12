@@ -143,8 +143,11 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
+      {/* Cabeçalho principal, público (sem bloqueio) */}
       <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <span className="font-display text-2xl">Minha Página</span>
+        <Link to="/" className="font-display text-2xl">
+          Minha Página
+        </Link>
         <div className="flex gap-4">
           <ThemeToggle />
           {user ? (
