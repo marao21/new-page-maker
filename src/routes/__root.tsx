@@ -116,7 +116,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const [session, setSession] = useState<Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session'] | null>(null);
+  const [session, setSession] = useState<Awaited<ReturnType<typeof supabase.auth.getSession>> | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -125,23 +125,28 @@ function RootComponent() {
 
     async function loadSession() {
       try {
-        const {
-          data: { session },
-          error,
-        } = await supabase.auth.getSession();
+        const { data, error } = await supabase.auth.getSession();
         if (error) throw error;
-        if (isMounted) setSession(session);
+        if (isMounted) {
+          setSession(data.session);
+        }
       } catch (err) {
-        if (isMounted) setError(err instanceof Error ? err : new Error(String(err)));
+        if (isMounted) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+        }
       } finally {
-        if (isMounted) setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     loadSession();
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (isMounted) setSession(session);
+      if (isMounted) {
+        setSession(session);
+      }
     });
 
     return () => {
