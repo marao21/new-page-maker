@@ -41,8 +41,8 @@ const servicos = [
 function Index() {
   return (
     <main className="min-h-screen bg-background text-foreground font-sans">
-      {/* Cabeçalho móvel e simples */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
+      {/* Cabeçalho móvel e simples (este header não é estritamente necessário porque já temos o da raiz, mas deixado como exemplo) */}
+      <header className="mx-auto hidden max-w-6xl items-center justify-between px-6 py-6 md:flex">
         <span className="font-display text-2xl">Minha Página</span>
         <div className="flex items-center gap-4">
           <ThemeToggle />
@@ -103,7 +103,7 @@ function Index() {
 
       {/* Seção de Prova Social */}
       <section className="mx-auto max-w-6xl px-6 py-20" id="prova-social">
-        <h2 className="font-display text-4xl text-center mb-8">Aprovado por quem confia</h2>
+        <h2 className="mb-8 text-center font-display text-4xl">Aprovado por quem confia</h2>
         <div className="grid gap-8 md:grid-cols-3">
           <div className="rounded-xl bg-card p-6 text-center shadow-sm">
             <p className="text-xl font-semibold tracking-tight">“Melhor experiência que já tive!”</p>
