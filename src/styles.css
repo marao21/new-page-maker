@@ -16,9 +16,9 @@
 .dark {
   --background: oklch(0.12 0.02 250); /* Fundo bem escuro, puxado para azul/violeta */
   --foreground: oklch(0.95 0.02 20); /* Texto quase branco */
-  --card: oklch(0.16 0.01 250); /* Cartões ainda mais escuros, leve elevação visual */
+  --card: oklch(0.16 0.02 250); /* Cartões escuros, leve elevação */
   --popover: var(--card);
-  --border: oklch(0.25 0.02 250); /* Bordas um pouco mais claras que o fundo */
+  --border: oklch(0.30 0.02 250); /* Borda um pouco mais clara p/ contraste */
   --destructive: oklch(0.65 0.12 30); /* Vermelho mais vibrante em dark mode */
   --primary: oklch(0.65 0.14 250); /* Tom vibrante para o modo escuro */
   --primary-foreground: oklch(0.98 0 0);

@@ -119,7 +119,7 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState<any>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -143,32 +143,65 @@ function RootComponent() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Cabeçalho principal, público (sem bloqueio) */}
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-6 py-6">
-        <Link to="/" className="font-display text-2xl">
-          Minha Página
-        </Link>
-        <div className="flex gap-4">
-          <ThemeToggle />
-          {user ? (
-            <>
-              <span className="self-center text-sm text-muted-foreground">{user.email}</span>
-              <Button onClick={signOut} variant="outline" size="sm">
-                Sair
-              </Button>
-            </>
-          ) : (
-            <>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/login">Entrar</Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/register">Criar conta</Link>
-              </Button>
-            </>
-          )}
+      {/* Header fixo, sofisticado */}
+      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
+        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+          {/* Logotipo */}
+          <Link to="/" className="inline-flex items-center gap-2 font-display text-2xl font-bold">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="h-6 w-6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 4.5v15m7.5-7.5h-15"
+              />
+            </svg>
+            <span>Minha Página</span>
+          </Link>
+
+          {/* Navegação + Ações */}
+          <div className="flex items-center gap-4">
+            <nav className="hidden items-center gap-6 md:flex">
+              <Link to="/" className="transition hover:opacity-80">
+                Início
+              </Link>
+              <Link to="/#servicos" className="transition hover:opacity-80">
+                Serviços
+              </Link>
+              <Link to="/#contato" className="transition hover:opacity-80">
+                Contato
+              </Link>
+            </nav>
+            <ThemeToggle />
+            {user ? (
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
+                  {user.email}
+                </span>
+                <Button onClick={signOut} variant="outline" className="rounded-full px-4 py-2" size="sm">
+                  Sair
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
+                <Button asChild variant="outline" className="rounded-full px-4 py-2" size="sm">
+                  <Link to="/login">Entrar</Link>
+                </Button>
+                <Button asChild variant="outline" className="rounded-full px-4 py-2" size="sm">
+                  <Link to="/register">Criar conta</Link>
+                </Button>
+              </div>
+            )}
+          </div>
         </div>
       </header>
+
       <Outlet />
     </QueryClientProvider>
   );
