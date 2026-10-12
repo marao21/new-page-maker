@@ -41,7 +41,7 @@ function Index() {
   return (
     <main className="min-h-screen bg-background font-sans text-foreground">
       {/* Hero section */}
-      <section className="mx-auto grid max-w-6xl items-center gap-8 px-6 py-12 md:grid-cols-2 md:gap-16 md:py-24">
+      <section className="relative mx-auto grid max-w-6xl items-center gap-8 px-6 py-12 md:grid-cols-2 md:gap-16 md:py-24 bg-gradient-to-tr from-primary/10 to-primary/30 rounded-b-2xl shadow-lg">
         <div className="space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
             Bem-vindo ao nosso espaço
@@ -81,7 +81,7 @@ function Index() {
       </section>
 
       {/* Seção de serviços */}
-      <section id="servicos" className="mx-auto max-w-6xl px-6 py-16 md:py-20">
+      <section id="servicos" className="mx-auto max-w-6xl px-6 py-16 md:py-20 bg-gradient-to-br from-background to-card rounded-lg shadow-md">
         <div className="mb-10 text-center">
           <h2 className="font-display text-4xl font-bold tracking-tight">O que fazemos</h2>
           <p className="mt-2 text-muted-foreground">
@@ -105,7 +105,7 @@ function Index() {
       </section>
 
       {/* Seção de contato */}
-      <section id="contato" className="mx-auto max-w-4xl px-6 pb-16 md:pb-24">
+      <section id="contato" className="mx-auto max-w-4xl px-6 pb-16 md:pb-24 bg-card/50 rounded-xl shadow-md backdrop-blur-sm">
         <div className="relative rounded-xl bg-card/60 backdrop-blur border border-border/60 p-8 text-center shadow-md">
           <h2 className="font-display text-3xl font-bold tracking-tight md:text-4xl">
             Vamos conversar?
