@@ -44,7 +44,7 @@ function Index() {
       <section className="relative mx-auto grid max-w-6xl items-center gap-8 px-6 py-12 md:grid-cols-2 md:gap-16 md:py-24 bg-gradient-to-tr from-primary/10 to-primary/30 rounded-b-2xl shadow-lg">
         <div className="space-y-6">
           <div className="inline-flex items-center gap-2 rounded-full border border-primary/20 bg-primary/5 px-4 py-1.5 text-sm font-medium text-primary">
-            Bem-vindo ao nosso espaço
+            
           </div>
           <h1 className="font-display text-4xl font-bold leading-[1.1] tracking-tight sm:text-5xl md:text-6xl">
             Feito com cuidado,<br />pensado para você.
