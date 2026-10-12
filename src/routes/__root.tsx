@@ -117,13 +117,27 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
-  const [session, setSession] = useState(supabase.auth.getSession);
+  const [session, setSession] = useState<Awaited<ReturnType<typeof supabase.auth.getSession>> | null>(null);
 
   useEffect(() => {
-    supabase.auth.onAuthStateChange((_event, session) => {
+    async function loadSession() {
+      const { data } = await supabase.auth.getSession();
+      setSession(data.session);
+    }
+    loadSession();
+
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
+
+    return () => {
+      listener?.subscription.unsubscribe();
+    };
   }, []);
+
+  if (session === null) {
+    return <div>Loading...</div>;
+  }
 
   if (!session) {
     return <Navigate to="/login" replace />;
