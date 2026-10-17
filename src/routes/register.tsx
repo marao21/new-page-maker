@@ -1,4 +1,5 @@
 import { FormEvent, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "../integrations/supabase/client";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 
@@ -31,6 +32,8 @@ export function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -112,33 +115,43 @@ export function Register() {
             className="mb-4 w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
           />
           <label htmlFor="register-password" className="mb-2 block text-sm font-medium">Senha (mínimo 8 caracteres)</label>
-          <input
-            id="register-password"
-            type="password"
-            name="password"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            maxLength={128}
-            placeholder="Crie uma senha"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="mb-4 w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-          />
+          <div className="relative mb-4">
+            <input
+              id="register-password"
+              type={showPassword ? "text" : "password"}
+              name="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              maxLength={128}
+              placeholder="Crie uma senha"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+            />
+            <button type="button" onClick={() => setShowPassword((visible) => !visible)} aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"} className="absolute inset-y-0 right-0 flex items-center justify-center px-4 text-muted-foreground hover:text-foreground rounded-r-xl">
+              {showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+            </button>
+          </div>
           <label htmlFor="register-confirm-password" className="mb-2 block text-sm font-medium">Confirmar senha</label>
-          <input
-            id="register-confirm-password"
-            type="password"
-            name="confirmPassword"
-            autoComplete="new-password"
-            required
-            minLength={8}
-            maxLength={128}
-            placeholder="Digite a senha novamente"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            className="mb-6 w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-          />
+          <div className="relative mb-6">
+            <input
+              id="register-confirm-password"
+              type={showConfirmPassword ? "text" : "password"}
+              name="confirmPassword"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              maxLength={128}
+              placeholder="Digite a senha novamente"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+            />
+            <button type="button" onClick={() => setShowConfirmPassword((visible) => !visible)} aria-label={showConfirmPassword ? "Ocultar confirmação da senha" : "Mostrar confirmação da senha"} className="absolute inset-y-0 right-0 flex items-center justify-center px-4 text-muted-foreground hover:text-foreground rounded-r-xl">
+              {showConfirmPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+            </button>
+          </div>
           <button
             type="submit"
             disabled={loading}
