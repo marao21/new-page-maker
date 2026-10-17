@@ -17,7 +17,7 @@ function friendlyAuthError(message: string) {
   const normalized = message.toLowerCase();
   if (normalized.includes("invalid login credentials")) return "E-mail ou senha incorretos.";
   if (normalized.includes("email not confirmed")) return "Confirme seu e-mail antes de entrar.";
-  if (normalized.includes("too many requests")) return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+  if (normalized.includes("too many requests") || normalized.includes("email rate limit exceeded")) return "Muitas tentativas de envio de e-mail. Aguarde alguns minutos e tente novamente.";
   if (normalized.includes("fetch")) return "Não foi possível conectar ao serviço de autenticação. Verifique sua conexão.";
   return message || "Não foi possível entrar. Tente novamente.";
 }

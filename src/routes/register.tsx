@@ -23,7 +23,7 @@ function friendlyRegisterError(message: string) {
   if (normalized.includes("already registered") || normalized.includes("user already registered")) return "Este e-mail já está cadastrado. Tente entrar.";
   if (normalized.includes("password") && (normalized.includes("length") || normalized.includes("characters"))) return "A senha não atende aos requisitos mínimos configurados.";
   if (normalized.includes("invalid email")) return "Informe um endereço de e-mail válido.";
-  if (normalized.includes("too many requests")) return "Muitas tentativas. Aguarde alguns minutos e tente novamente.";
+  if (normalized.includes("too many requests") || normalized.includes("email rate limit exceeded")) return "Muitas tentativas de envio de e-mail. Aguarde alguns minutos e tente novamente.";
   if (normalized.includes("fetch")) return "Não foi possível conectar ao serviço de autenticação. Verifique sua conexão.";
   return message || "Não foi possível criar sua conta. Tente novamente.";
 }
