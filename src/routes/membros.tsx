@@ -202,9 +202,8 @@ function MembersArea() {
           <section id="ajuda" className="mt-10 scroll-mt-24 rounded-2xl border border-slate-200 bg-white p-6 sm:p-8">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-start gap-4"><div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-pink-50 text-pink-700"><CircleHelp className="h-5 w-5" /></div><div><h2 className="text-lg font-extrabold">Precisa de ajuda?</h2><p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">Se você tiver dificuldade para acessar sua conta ou seus materiais, entre em contato com o suporte do produto.</p></div></div>
-              <a href="mailto:suporte@exemplo.com?subject=Ajuda%20com%20a%20%C3%A1rea%20de%20membros" className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold transition hover:bg-slate-50">Falar com suporte <ArrowUpRight className="h-4 w-4" /></a>
+              <span className="inline-flex shrink-0 items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-slate-600">Use o canal de suporte informado na compra <ArrowUpRight className="h-4 w-4" /></span>
             </div>
-            <p className="mt-4 text-xs text-slate-400">Configure o e-mail real de suporte antes de publicar.</p>
           </section>
 
           <footer className="flex flex-col gap-2 py-8 text-xs text-slate-400 sm:flex-row sm:items-center sm:justify-between">
