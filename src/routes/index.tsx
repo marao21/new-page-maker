@@ -61,7 +61,7 @@ export function SalesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-pink-100 selection:text-pink-900">
+    <div className="min-h-screen bg-slate-50 text-slate-900 font-sans selection:bg-emerald-100 selection:text-emerald-900">
       {/* 3.1 Barra Superior */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
@@ -69,26 +69,26 @@ export function SalesPage() {
             href="#"
             className="flex items-center gap-2.5 font-bold text-lg sm:text-xl tracking-tight text-slate-900 hover:opacity-90 transition"
           >
-            <span className="w-8 h-8 rounded-lg bg-pink-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm">
+            <span className="w-8 h-8 rounded-lg bg-emerald-600 flex items-center justify-center text-white font-extrabold text-sm shadow-sm">
               GA
             </span>
             <span className="font-extrabold">{productConfig.name}</span>
           </a>
 
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
-            <a href="#beneficios" className="hover:text-pink-600 transition">
+            <a href="#beneficios" className="hover:text-emerald-600 transition">
               Benefícios
             </a>
-            <a href="#incluso" className="hover:text-pink-600 transition">
+            <a href="#incluso" className="hover:text-emerald-600 transition">
               O que está incluso
             </a>
-            <a href="#demonstracao" className="hover:text-pink-600 transition">
+            <a href="#demonstracao" className="hover:text-emerald-600 transition">
               Por dentro
             </a>
-            <a href="#como-funciona" className="hover:text-pink-600 transition">
+            <a href="#como-funciona" className="hover:text-emerald-600 transition">
               Como funciona
             </a>
-            <a href="#faq" className="hover:text-pink-600 transition">
+            <a href="#faq" className="hover:text-emerald-600 transition">
               Dúvidas
             </a>
           </nav>
@@ -96,13 +96,13 @@ export function SalesPage() {
           <div className="flex items-center gap-3">
             <Link
               to="/login"
-              className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 hover:text-pink-600 transition"
+              className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 hover:text-emerald-600 transition"
             >
               Entrar
             </Link>
             <button
               onClick={() => setIsCheckoutOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-pink-600 hover:bg-pink-700 active:bg-pink-800 text-white font-semibold text-xs sm:text-sm shadow-sm hover:shadow transition cursor-pointer focus-visible:ring-2 focus-visible:ring-pink-600 focus-visible:ring-offset-2"
+              className="inline-flex items-center justify-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-semibold text-xs sm:text-sm shadow-sm hover:shadow transition cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
             >
               <span>Quero Acessar</span>
               <ArrowRight className="w-4 h-4 hidden sm:inline-block" />
@@ -123,35 +123,35 @@ export function SalesPage() {
             <a
               href="#beneficios"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-medium text-slate-700 hover:text-pink-600 py-1"
+              className="block text-sm font-medium text-slate-700 hover:text-emerald-600 py-1"
             >
               Benefícios
             </a>
             <a
               href="#incluso"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-medium text-slate-700 hover:text-pink-600 py-1"
+              className="block text-sm font-medium text-slate-700 hover:text-emerald-600 py-1"
             >
               O que está incluso
             </a>
             <a
               href="#demonstracao"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-medium text-slate-700 hover:text-pink-600 py-1"
+              className="block text-sm font-medium text-slate-700 hover:text-emerald-600 py-1"
             >
               Por dentro do material
             </a>
             <a
               href="#como-funciona"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-medium text-slate-700 hover:text-pink-600 py-1"
+              className="block text-sm font-medium text-slate-700 hover:text-emerald-600 py-1"
             >
               Como funciona
             </a>
             <a
               href="#faq"
               onClick={() => setMobileMenuOpen(false)}
-              className="block text-sm font-medium text-slate-700 hover:text-pink-600 py-1"
+              className="block text-sm font-medium text-slate-700 hover:text-emerald-600 py-1"
             >
               Perguntas frequentes
             </a>
@@ -161,7 +161,7 @@ export function SalesPage() {
                   setMobileMenuOpen(false);
                   setIsCheckoutOpen(true);
                 }}
-                className="w-full text-center py-2.5 rounded-lg bg-pink-600 text-white font-semibold text-sm shadow-sm"
+                className="w-full text-center py-2.5 rounded-lg bg-emerald-600 text-white font-semibold text-sm shadow-sm"
               >
                 Garantir Acesso • R$ {productConfig.price.toFixed(2).replace(".", ",")}
               </button>
@@ -173,7 +173,7 @@ export function SalesPage() {
       {/* 3.2 Hero — Primeira Dobra */}
       <section className="pt-10 pb-16 sm:pt-16 sm:pb-24 px-4 sm:px-6 bg-gradient-to-b from-white via-white to-slate-50 border-b border-slate-200/80">
         <div className="max-w-5xl mx-auto text-center space-y-6">
-          <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-pink-700">
+          <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-emerald-700">
             <span>Produto 100% Digital</span>
             <span aria-hidden="true" className="text-slate-300">
               ·
@@ -200,7 +200,7 @@ export function SalesPage() {
                   R$ {productConfig.originalPrice.toFixed(2).replace(".", ",")}
                 </span>
               )}
-              <span className="text-3xl sm:text-4xl font-extrabold text-pink-900">
+              <span className="text-3xl sm:text-4xl font-extrabold text-emerald-900">
                 R$ {productConfig.price.toFixed(2).replace(".", ",")}
               </span>
               <span className="text-xs sm:text-sm text-slate-600 font-medium">pagamento único</span>
@@ -208,7 +208,7 @@ export function SalesPage() {
 
             <button
               onClick={() => setIsCheckoutOpen(true)}
-              className="w-full sm:w-auto min-w-[280px] inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-pink-600 hover:bg-pink-700 active:bg-pink-800 text-white font-bold text-lg shadow-sm hover:shadow-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-pink-600 focus-visible:ring-offset-2"
+              className="w-full sm:w-auto min-w-[280px] inline-flex items-center justify-center gap-2.5 px-8 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-lg shadow-sm hover:shadow-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
             >
               <span>Quero Meu Acesso Imediato</span>
               <ArrowRight className="w-5 h-5" />
@@ -233,7 +233,7 @@ export function SalesPage() {
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-8 text-left">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="space-y-3 border-b md:border-b-0 md:border-r border-slate-100 pb-4 md:pb-0 md:pr-4">
-                  <div className="w-10 h-10 rounded-lg bg-pink-50 text-pink-700 flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
                     <FileText className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-slate-900 text-base">E-book Interativo (PDF)</h3>
@@ -255,7 +255,7 @@ export function SalesPage() {
                 </div>
 
                 <div className="space-y-3">
-                  <div className="w-10 h-10 rounded-lg bg-pink-50 text-pink-700 flex items-center justify-center font-bold">
+                  <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center font-bold">
                     <FileCheck className="w-5 h-5" />
                   </div>
                   <h3 className="font-bold text-slate-900 text-base">Planilhas & Checklists</h3>
@@ -303,8 +303,8 @@ export function SalesPage() {
               </ul>
             </div>
 
-            <div className="rounded-2xl border border-pink-200 bg-pink-50/50 p-6 sm:p-8 space-y-5">
-              <div className="inline-flex items-center gap-2 text-xs font-bold text-pink-700 uppercase tracking-wider">
+            <div className="rounded-2xl border border-emerald-200 bg-emerald-50/50 p-6 sm:p-8 space-y-5">
+              <div className="inline-flex items-center gap-2 text-xs font-bold text-emerald-700 uppercase tracking-wider">
                 <span>A Solução com o Kit</span>
               </div>
               <h3 className="text-xl font-bold text-slate-900">
@@ -312,28 +312,28 @@ export function SalesPage() {
               </h3>
               <ul className="space-y-3.5 text-sm text-slate-700">
                 <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-pink-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                   <span>
                     <strong>Priorização sem estresse:</strong> identifique as 3 metas do dia em 10
                     minutos pela manhã.
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-pink-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                   <span>
                     <strong>Centralização total:</strong> anotações, tarefas e lembretes em um único
                     lugar fácil de consultar.
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-pink-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                   <span>
                     <strong>Execução por blocos:</strong> trabalhe em blocos de foco que evitam o
                     cansaço mental extremo.
                   </span>
                 </li>
                 <li className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-pink-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
                   <span>
                     <strong>Sensação real de dever cumprido:</strong> encerre o dia sabendo
                     exatamente o que foi avançado.
@@ -367,10 +367,10 @@ export function SalesPage() {
               return (
                 <div
                   key={benefit.id}
-                  className="bg-white rounded-xl border border-slate-200/90 p-6 shadow-sm hover:border-pink-200 hover:shadow-md transition flex flex-col justify-between"
+                  className="bg-white rounded-xl border border-slate-200/90 p-6 shadow-sm hover:border-emerald-200 hover:shadow-md transition flex flex-col justify-between"
                 >
                   <div className="space-y-3">
-                    <div className="w-10 h-10 rounded-lg bg-pink-50 text-pink-700 flex items-center justify-center">
+                    <div className="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center">
                       <IconComp className="w-5 h-5" />
                     </div>
                     <h3 className="font-bold text-slate-900 text-lg leading-snug">
@@ -407,7 +407,7 @@ export function SalesPage() {
                 className="bg-slate-50/70 rounded-xl border border-slate-200 p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4"
               >
                 <div className="flex items-start gap-4">
-                  <div className="w-8 h-8 rounded-full bg-pink-100 text-pink-800 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">
+                  <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold text-sm shrink-0 mt-0.5">
                     0{idx + 1}
                   </div>
                   <div className="space-y-1">
@@ -416,7 +416,7 @@ export function SalesPage() {
                         {item.title}
                       </h3>
                       {item.badge && (
-                        <span className="text-xs font-medium text-pink-700 bg-pink-100/70 px-2 py-0.5 rounded">
+                        <span className="text-xs font-medium text-emerald-700 bg-emerald-100/70 px-2 py-0.5 rounded">
                           {item.badge}
                         </span>
                       )}
@@ -434,17 +434,17 @@ export function SalesPage() {
 
             {productConfig.bonuses.length > 0 && (
               <div className="pt-6">
-                <div className="text-xs font-bold text-pink-700 uppercase tracking-wider mb-3">
+                <div className="text-xs font-bold text-emerald-700 uppercase tracking-wider mb-3">
                   Bônus Inclusos Gratuitamente
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   {productConfig.bonuses.map((bonus) => (
                     <div
                       key={bonus.id}
-                      className="bg-pink-50/60 rounded-xl border border-pink-100 p-4 space-y-2"
+                      className="bg-emerald-50/60 rounded-xl border border-emerald-100 p-4 space-y-2"
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold text-pink-900 uppercase">
+                        <span className="text-xs font-semibold text-emerald-900 uppercase">
                           {bonus.format}
                         </span>
                         <span className="text-xs text-slate-600 font-medium">
@@ -485,7 +485,7 @@ export function SalesPage() {
                   onClick={() => setSelectedDemoTab(idx)}
                   className={`px-4 py-2 rounded-lg text-sm font-semibold transition cursor-pointer ${
                     selectedDemoTab === idx
-                      ? "bg-pink-600 text-white shadow-sm"
+                      ? "bg-emerald-600 text-white shadow-sm"
                       : "bg-slate-100 text-slate-600 hover:text-slate-900 hover:bg-slate-200"
                   }`}
                 >
@@ -497,7 +497,7 @@ export function SalesPage() {
             {productConfig.demoPreview.items[selectedDemoTab] && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                 <div className="space-y-4">
-                  <span className="text-xs font-semibold text-pink-700 uppercase tracking-wider">
+                  <span className="text-xs font-semibold text-emerald-700 uppercase tracking-wider">
                     {productConfig.demoPreview.items[selectedDemoTab].category}
                   </span>
                   <h3 className="text-2xl font-bold text-slate-900">
@@ -529,15 +529,15 @@ export function SalesPage() {
                   <div className="space-y-2 text-slate-600">
                     <div className="p-2.5 bg-white rounded border border-slate-200 flex justify-between">
                       <span>✓ 01. Bloco Matinal de Foco</span>
-                      <span className="text-pink-600 font-bold">90 min</span>
+                      <span className="text-emerald-600 font-bold">90 min</span>
                     </div>
                     <div className="p-2.5 bg-white rounded border border-slate-200 flex justify-between">
                       <span>✓ 02. Tarefas Operacionais</span>
-                      <span className="text-pink-600 font-bold">45 min</span>
+                      <span className="text-emerald-600 font-bold">45 min</span>
                     </div>
                     <div className="p-2.5 bg-white rounded border border-slate-200 flex justify-between">
                       <span>✓ 03. Revisão & Fechamento</span>
-                      <span className="text-pink-600 font-bold">15 min</span>
+                      <span className="text-emerald-600 font-bold">15 min</span>
                     </div>
                   </div>
                 </div>
@@ -564,7 +564,7 @@ export function SalesPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             <div className="bg-slate-50 rounded-xl border border-slate-200 p-6 space-y-3 relative">
-              <span className="text-3xl font-extrabold text-pink-600 block">1</span>
+              <span className="text-3xl font-extrabold text-emerald-600 block">1</span>
               <h3 className="font-bold text-slate-900 text-lg">Informe seus dados</h3>
               <p className="text-sm text-slate-600 leading-relaxed">
                 Clique no botão de acesso e informe seu nome e e-mail para onde o kit e os acessos
@@ -573,7 +573,7 @@ export function SalesPage() {
             </div>
 
             <div className="bg-slate-50 rounded-xl border border-slate-200 p-6 space-y-3 relative">
-              <span className="text-3xl font-extrabold text-pink-600 block">2</span>
+              <span className="text-3xl font-extrabold text-emerald-600 block">2</span>
               <h3 className="font-bold text-slate-900 text-lg">Pagamento Seguro</h3>
               <p className="text-sm text-slate-600 leading-relaxed">
                 Pague via PIX ou Cartão no ambiente protegido do Mercado Pago, com confirmação
@@ -582,7 +582,7 @@ export function SalesPage() {
             </div>
 
             <div className="bg-slate-50 rounded-xl border border-slate-200 p-6 space-y-3 relative">
-              <span className="text-3xl font-extrabold text-pink-600 block">3</span>
+              <span className="text-3xl font-extrabold text-emerald-600 block">3</span>
               <h3 className="font-bold text-slate-900 text-lg">Acesso Imediato</h3>
               <p className="text-sm text-slate-600 leading-relaxed">
                 Baixe os arquivos direto na tela de confirmação e receba uma cópia com todas as
@@ -599,9 +599,9 @@ export function SalesPage() {
         className="py-16 sm:py-24 px-4 sm:px-6 bg-slate-50 border-b border-slate-200/80"
       >
         <div className="max-w-2xl mx-auto">
-          <div className="bg-white rounded-3xl border-2 border-pink-600 p-6 sm:p-10 shadow-lg space-y-8 relative overflow-hidden">
+          <div className="bg-white rounded-3xl border-2 border-emerald-600 p-6 sm:p-10 shadow-lg space-y-8 relative overflow-hidden">
             <div className="space-y-3 text-center">
-              <span className="text-xs font-bold text-pink-700 uppercase tracking-wider">
+              <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
                 Acesso Vitalício ao Pacote Completo
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
@@ -619,7 +619,7 @@ export function SalesPage() {
                   De R$ {productConfig.originalPrice.toFixed(2).replace(".", ",")} por
                 </div>
               )}
-              <div className="text-4xl sm:text-5xl font-extrabold text-pink-900">
+              <div className="text-4xl sm:text-5xl font-extrabold text-emerald-900">
                 R$ {productConfig.price.toFixed(2).replace(".", ",")}
               </div>
               <p className="text-xs text-slate-600 font-medium">
@@ -637,7 +637,7 @@ export function SalesPage() {
               <ul className="space-y-2.5 text-sm text-slate-700">
                 {productConfig.includedItems.map((item) => (
                   <li key={item.id} className="flex items-start gap-2.5">
-                    <CheckCircle2 className="w-4 h-4 text-pink-600 shrink-0 mt-0.5" />
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
                       <strong>{item.title}:</strong> {item.format}
                     </span>
@@ -646,7 +646,7 @@ export function SalesPage() {
                 {productConfig.bonuses.map((bonus) => (
                   <li
                     key={bonus.id}
-                    className="flex items-start gap-2.5 text-pink-950 font-medium"
+                    className="flex items-start gap-2.5 text-emerald-950 font-medium"
                   >
                     <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                     <span>
@@ -655,11 +655,11 @@ export function SalesPage() {
                   </li>
                 ))}
                 <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-pink-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <span>Atualizações e suporte por e-mail</span>
                 </li>
                 <li className="flex items-start gap-2.5">
-                  <CheckCircle2 className="w-4 h-4 text-pink-600 shrink-0 mt-0.5" />
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
                   <span>Garantia incondicional de 7 dias com reembolso total</span>
                 </li>
               </ul>
@@ -668,7 +668,7 @@ export function SalesPage() {
             <div className="space-y-3">
               <button
                 onClick={() => setIsCheckoutOpen(true)}
-                className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-pink-600 hover:bg-pink-700 active:bg-pink-800 text-white font-bold text-lg shadow-sm hover:shadow-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-pink-600 focus-visible:ring-offset-2"
+                className="w-full inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-lg shadow-sm hover:shadow-md transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-600 focus-visible:ring-offset-2"
               >
                 <span>Garantir Meu Acesso Agora</span>
                 <ArrowRight className="w-5 h-5" />
@@ -694,7 +694,7 @@ export function SalesPage() {
       <section className="py-16 sm:py-20 px-4 sm:px-6 bg-white border-b border-slate-200/80">
         <div className="max-w-3xl mx-auto space-y-6">
           <div className="space-y-2">
-            <span className="text-xs font-bold text-pink-700 uppercase tracking-wider">
+            <span className="text-xs font-bold text-emerald-700 uppercase tracking-wider">
               Transparência & Metodologia
             </span>
             <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900">
@@ -734,7 +734,7 @@ export function SalesPage() {
               investimento, basta enviar um e-mail para{" "}
               <a
                 href={`mailto:${productConfig.supportEmail}`}
-                className="text-pink-600 underline font-medium"
+                className="text-emerald-600 underline font-medium"
               >
                 {productConfig.supportEmail}
               </a>{" "}
@@ -766,7 +766,7 @@ export function SalesPage() {
                 value={`item-${index}`}
                 className="bg-slate-50 border border-slate-200 rounded-xl px-5 py-1 text-left"
               >
-                <AccordionTrigger className="text-left font-semibold text-slate-900 hover:text-pink-700 hover:no-underline py-4">
+                <AccordionTrigger className="text-left font-semibold text-slate-900 hover:text-emerald-700 hover:no-underline py-4">
                   {item.question}
                 </AccordionTrigger>
                 <AccordionContent className="text-sm text-slate-600 leading-relaxed pb-4 pt-1">
@@ -791,7 +791,7 @@ export function SalesPage() {
           <div className="pt-2">
             <button
               onClick={() => setIsCheckoutOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-pink-600 hover:bg-pink-700 active:bg-pink-800 text-white font-bold text-lg shadow-sm hover:shadow transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-pink-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 text-white font-bold text-lg shadow-sm hover:shadow transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             >
               <span>Quero Acessar o Material Agora</span>
               <ArrowRight className="w-5 h-5" />
@@ -819,7 +819,7 @@ export function SalesPage() {
               <p className="text-slate-600">Suporte ao cliente:</p>
               <a
                 href={`mailto:${productConfig.supportEmail}`}
-                className="text-pink-400 hover:underline"
+                className="text-emerald-400 hover:underline"
               >
                 {productConfig.supportEmail}
               </a>
