@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import { productConfig } from "@/config/product";
 import { CheckoutModal } from "@/components/CheckoutModal";
 import {
@@ -47,38 +46,11 @@ export const Route = createFileRoute("/")({
   component: SalesPage,
 });
 
-import { supabase, isSupabaseConfigured } from "@/integrations/supabase/client";
 
 export function SalesPage() {
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedDemoTab, setSelectedDemoTab] = useState(0);
-  const [dbStatus, setDbStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
-  const [dbMessage, setDbMessage] = useState<string>("");
-
-  const testDatabaseConnection = async () => {
-    setDbStatus("loading");
-    setDbMessage("Testando conexão com o Supabase...");
-    try {
-      if (!isSupabaseConfigured()) {
-        setDbStatus("error");
-        setDbMessage("As credenciais do Supabase não estão configuradas (VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY em falta).");
-        return;
-      }
-      const { data, error } = await (supabase as SupabaseClient).from("users").select("id").limit(1);
-      if (error) {
-        setDbStatus("error");
-        setDbMessage(`Erro ao consultar o banco: ${error.message}`);
-      } else {
-        setDbStatus("success");
-        setDbMessage(`Conexão bem-sucedida! Registros encontrados: ${data?.length ?? 0}`);
-      }
-    } catch (err: any) {
-      setDbStatus("error");
-      setDbMessage(`Exceção ao conectar: ${err?.message || String(err)}`);
-    }
-  };
-
   const iconMap = {
     Clock: Clock,
     Target: Target,
@@ -201,11 +173,6 @@ export function SalesPage() {
       {/* 3.2 Hero — Primeira Dobra */}
       <section className="pt-10 pb-16 sm:pt-16 sm:pb-24 px-4 sm:px-6 bg-gradient-to-b from-white via-white to-slate-50 border-b border-slate-200/80">
         <div className="max-w-5xl mx-auto text-center space-y-6">
-          <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm flex items-center justify-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
-            <strong>Supabase Conectado!</strong> Sim, agora você já pode realizar alterações, criar tabelas, autenticação, consultas e fluxos completos no projeto.
-          </div>
-
           <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-pink-700">
             <span>Produto 100% Digital</span>
             <span aria-hidden="true" className="text-slate-300">
@@ -259,31 +226,6 @@ export function SalesPage() {
                 <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
                 Garantia de 7 Dias
               </span>
-            </div>
-          </div>
-
-          <div className="pt-4 max-w-xl mx-auto">
-            <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-left flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-slate-400" style={{
-                    backgroundColor: dbStatus === 'success' ? '#22c55e' : dbStatus === 'error' ? '#ef4444' : dbStatus === 'loading' ? '#eab308' : '#94a3b8'
-                  }} />
-                  <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Status do Supabase</span>
-                </div>
-                <button
-                  onClick={testDatabaseConnection}
-                  disabled={dbStatus === 'loading'}
-                  className="px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold transition cursor-pointer disabled:opacity-50"
-                >
-                  {dbStatus === 'loading' ? 'Testando...' : 'Testar Leitura do Banco'}
-                </button>
-              </div>
-              {dbMessage && (
-                <p className={`text-xs p-2 rounded-md ${dbStatus === 'success' ? 'bg-emerald-50 text-emerald-800 border border-emerald-200' : dbStatus === 'error' ? 'bg-red-50 text-red-800 border border-red-200' : 'bg-slate-50 text-slate-700'}`}>
-                  {dbMessage}
-                </p>
-              )}
             </div>
           </div>
 
