@@ -1,0 +1,3 @@
+- [ ] Corrigir classificação de erros e proteção contra cadastros duplicados sem alterar o visual.
+- [ ] Testar envio único, espera e confirmação de e-mail.
+- [ ] Informar a causa externa comprovada e as configurações ainda não verificadas no Supabase.
