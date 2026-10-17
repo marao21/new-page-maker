@@ -96,6 +96,12 @@ export function SalesPage() {
 
           {/* Ações da Barra Superior */}
           <div className="flex items-center gap-3">
+            <Link
+              to="/login"
+              className="hidden sm:inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-slate-700 hover:text-pink-600 transition"
+            >
+              Entrar
+            </Link>
             <button
               onClick={() => setIsCheckoutOpen(true)}
               className="inline-flex items-center justify-center gap-2 px-4 py-2 sm:px-5 sm:py-2.5 rounded-lg bg-pink-600 hover:bg-pink-700 active:bg-pink-800 text-white font-semibold text-xs sm:text-sm shadow-sm hover:shadow transition cursor-pointer focus-visible:ring-2 focus-visible:ring-pink-600 focus-visible:ring-offset-2"
