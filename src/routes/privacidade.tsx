@@ -7,6 +7,10 @@ export const Route = createFileRoute("/privacidade")({
     meta: [
       { title: `Política de Privacidade — ${productConfig.name}` },
       { name: "description", content: "Política de privacidade e proteção de dados." },
+      { property: "og:title", content: `Política de Privacidade — ${productConfig.name}` },
+      { property: "og:description", content: "Política de privacidade e proteção de dados." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: PrivacyPage,

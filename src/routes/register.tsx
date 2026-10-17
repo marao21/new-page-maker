@@ -1,13 +1,20 @@
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "../integrations/supabase/client";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { classifySignupError } from "@/lib/signup-errors";
+import { Button } from "@/components/ui/button";
+import { productConfig } from "@/config/product";
 
 export const Route = createFileRoute("/register")({
   head: () => ({
     meta: [
-      { title: "Cadastrar — Minha Página" },
+      { title: `Criar conta — ${productConfig.name}` },
       { name: "description", content: "Crie sua conta com e-mail e senha." },
+      { property: "og:title", content: `Criar conta — ${productConfig.name}` },
+      { property: "og:description", content: "Crie sua conta com e-mail e senha." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Register,
@@ -18,16 +25,6 @@ interface Message {
   text: string;
 }
 
-function friendlyRegisterError(message: string) {
-  const normalized = message.toLowerCase();
-  if (normalized.includes("already registered") || normalized.includes("user already registered")) return "Este e-mail já está cadastrado. Tente entrar.";
-  if (normalized.includes("password") && (normalized.includes("length") || normalized.includes("characters"))) return "A senha não atende aos requisitos mínimos configurados.";
-  if (normalized.includes("invalid email")) return "Informe um endereço de e-mail válido.";
-  if (normalized.includes("too many requests") || normalized.includes("email rate limit exceeded")) return "Muitas tentativas de envio de e-mail. Aguarde alguns minutos e tente novamente.";
-  if (normalized.includes("fetch")) return "Não foi possível conectar ao serviço de autenticação. Verifique sua conexão.";
-  return message || "Não foi possível criar sua conta. Tente novamente.";
-}
-
 export function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -36,10 +33,24 @@ export function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [message, setMessage] = useState<Message | null>(null);
   const [loading, setLoading] = useState(false);
+  const [completed, setCompleted] = useState(false);
+  const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const requestInFlight = useRef(false);
+  const signupCompleted = useRef(false);
+  const blockedUntil = useRef(0);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (remainingSeconds <= 0) return;
+    const timer = window.setInterval(() => {
+      setRemainingSeconds(Math.max(0, Math.ceil((blockedUntil.current - Date.now()) / 1000)));
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [remainingSeconds > 0]);
 
   async function handleRegister(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    if (requestInFlight.current || signupCompleted.current || Date.now() < blockedUntil.current) return;
     setMessage(null);
     const normalizedEmail = email.trim().toLowerCase();
 
@@ -60,17 +71,27 @@ export function Register() {
       return;
     }
 
+    requestInFlight.current = true;
     setLoading(true);
     try {
       const { data, error } = await supabase.auth.signUp({
         email: normalizedEmail,
         password,
+        options: { emailRedirectTo: window.location.origin },
       });
 
       if (error) {
-        setMessage({ type: "error", text: friendlyRegisterError(error.message) });
+        const failure = classifySignupError(error);
+        setMessage({ type: "error", text: failure.text });
+        if (failure.rateLimited) {
+          blockedUntil.current = Date.now() + failure.pauseSeconds * 1000;
+          setRemainingSeconds(failure.pauseSeconds);
+        }
         return;
       }
+
+      signupCompleted.current = true;
+      setCompleted(true);
 
       if (data.user && !data.session) {
         setMessage({
@@ -88,8 +109,9 @@ export function Register() {
 
       setMessage({ type: "success", text: "Cadastro recebido. Se necessário, confirme seu e-mail para ativar a conta." });
     } catch {
-      setMessage({ type: "error", text: "Ocorreu um erro ao criar sua conta. Verifique sua conexão e tente novamente." });
+      setMessage({ type: "error", text: "Não foi possível confirmar o resultado do cadastro. Verifique sua caixa de entrada e sua conexão antes de tentar novamente." });
     } finally {
+      requestInFlight.current = false;
       setLoading(false);
     }
   }
@@ -152,13 +174,14 @@ export function Register() {
               {showConfirmPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
             </button>
           </div>
-          <button
+          <Button
             type="submit"
-            disabled={loading}
-            className="w-full rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground shadow-lg transition-all hover:bg-primary/90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
+            disabled={loading || remainingSeconds > 0 || completed}
+            aria-busy={loading}
+            className="h-auto w-full whitespace-normal rounded-xl bg-primary px-4 py-3 font-semibold text-primary-foreground shadow-lg transition-all hover:bg-primary/90 hover:translate-x-0 hover:translate-y-0 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {loading ? "Criando conta..." : "Criar conta"}
-          </button>
+            {loading ? "Criando conta..." : remainingSeconds > 0 ? `Aguarde ${remainingSeconds}s` : completed ? "Cadastro enviado" : "Criar conta"}
+          </Button>
         </form>
         {message && (
           <p role={message.type === "error" ? "alert" : "status"} aria-live="polite"
@@ -166,6 +189,7 @@ export function Register() {
             {message.text}
           </p>
         )}
+        {remainingSeconds > 0 && <p role="timer" className="mt-2 text-sm text-muted-foreground">Pausa local: {remainingSeconds}s antes de uma nova tentativa manual. Nenhum reenvio será feito automaticamente.</p>}
         <p className="mt-4 text-center text-sm text-muted-foreground">
           Já tem uma conta?
           <Link to="/login" className="ml-1 font-medium text-primary underline hover:opacity-80">Entrar</Link>

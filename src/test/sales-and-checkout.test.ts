@@ -59,8 +59,8 @@ describe("Orders & Server-Authoritative Data Layer", () => {
   });
 
   it("safely detects unconfigured Mercado Pago credentials without fake checkout", async () => {
-    const originalToken = process.env.MERCADO_PAGO_ACCESS_TOKEN;
-    delete process.env.MERCADO_PAGO_ACCESS_TOKEN;
+    const originalToken = process.env['MERCADO_PAGO_ACCESS_TOKEN'];
+    delete process.env['MERCADO_PAGO_ACCESS_TOKEN'];
 
     expect(isMercadoPagoConfigured()).toBe(false);
 
@@ -76,7 +76,7 @@ describe("Orders & Server-Authoritative Data Layer", () => {
 
     // Restore if set
     if (originalToken) {
-      process.env.MERCADO_PAGO_ACCESS_TOKEN = originalToken;
+      process.env['MERCADO_PAGO_ACCESS_TOKEN'] = originalToken;
     }
   });
 });

@@ -35,6 +35,16 @@ interface OrderData {
 }
 
 export const Route = createFileRoute("/pedido/$id")({
+  head: () => ({
+    meta: [
+      { title: `Seu pedido — ${productConfig.name}` },
+      { name: "description", content: "Consulte o andamento do seu pedido." },
+      { property: "og:title", content: `Seu pedido — ${productConfig.name}` },
+      { property: "og:description", content: "Consulte o andamento do seu pedido." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: OrderStatusPage,
 });
 

@@ -10,3 +10,5 @@
 > the editor, so keep the branch in a working state.
 
 <!-- LOVABLE:END -->
+
+- Registration classifies Supabase errors in a browser-safe helper and guards submissions synchronously; this prevents duplicate sends without retrying or bypassing provider quotas.

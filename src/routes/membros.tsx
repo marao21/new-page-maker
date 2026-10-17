@@ -11,6 +11,10 @@ export const Route = createFileRoute("/membros")({
     meta: [
       { title: "Área de Membros — Guia de Foco" },
       { name: "description", content: "Acesse seus materiais e acompanhe seu progresso." },
+      { property: "og:title", content: "Área de Membros — Guia de Foco" },
+      { property: "og:description", content: "Acesse seus materiais e acompanhe seu progresso." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: MembersArea,

@@ -11,7 +11,7 @@ import {
 let mpConfig: MercadoPagoConfig | null = null;
 
 export function getMercadoPagoClient(): MercadoPagoConfig | null {
-  const token = process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim();
+  const token = process.env['MERCADO_PAGO_ACCESS_TOKEN']?.trim();
   if (!token) return null;
 
   if (!mpConfig) {
@@ -26,13 +26,13 @@ export function getMercadoPagoClient(): MercadoPagoConfig | null {
 }
 
 export function isMercadoPagoConfigured(): boolean {
-  return Boolean(process.env.MERCADO_PAGO_ACCESS_TOKEN?.trim());
+  return Boolean(process.env['MERCADO_PAGO_ACCESS_TOKEN']?.trim());
 }
 
 export interface CreateCheckoutInput {
   name: string;
   email: string;
-  cpf?: string;
+  cpf?: string | undefined;
   baseUrl: string;
 }
 
@@ -155,18 +155,18 @@ export async function handleMercadoPagoWebhook(
 
   // Mercado Pago sends notifications either via query params (?topic=payment&id=123 or ?type=payment&data.id=123)
   // or via JSON body ({ type: 'payment', data: { id: '123' } } or { topic: 'payment', resource: '...' })
-  const bodyData = body?.data as { id?: string | number } | undefined;
-  const bodyResource = typeof body?.resource === "string" ? body.resource : undefined;
+  const bodyData = body?.['data'] as { id?: string | number } | undefined;
+  const bodyResource = typeof body?.['resource'] === "string" ? body['resource'] : undefined;
 
   const paymentId = bodyData?.id
     ? String(bodyData.id)
-    : query["data.id"] || query.id || (bodyResource ? bodyResource.split("/").pop() : undefined);
+    : query["data.id"] || query['id'] || (bodyResource ? bodyResource.split("/").pop() : undefined);
 
   const topic =
-    (typeof body?.type === "string" ? body.type : undefined) ||
-    query.type ||
-    (typeof body?.topic === "string" ? body.topic : undefined) ||
-    query.topic;
+    (typeof body?.['type'] === "string" ? body['type'] : undefined) ||
+    query['type'] ||
+    (typeof body?.['topic'] === "string" ? body['topic'] : undefined) ||
+    query['topic'];
 
   if (!paymentId || (topic && topic !== "payment")) {
     return {
