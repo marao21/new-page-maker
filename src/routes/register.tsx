@@ -82,7 +82,7 @@ export function Register() {
 
       if (data.session) {
         setMessage({ type: "success", text: "Cadastro realizado com sucesso! Redirecionando..." });
-        await navigate({ to: "/", replace: true });
+        await navigate({ to: "/membros", replace: true });
         return;
       }
 
