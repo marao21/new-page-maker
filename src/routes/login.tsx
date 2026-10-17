@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { supabase } from "../integrations/supabase/client";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 
@@ -24,6 +25,7 @@ function friendlyAuthError(message: string) {
 export function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
@@ -93,18 +95,28 @@ export function Login() {
             className="mb-4 w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
           />
           <label htmlFor="login-password" className="mb-2 block text-sm font-medium">Senha</label>
-          <input
-            id="login-password"
-            type="password"
-            name="password"
-            autoComplete="current-password"
-            required
-            maxLength={128}
-            placeholder="Sua senha"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            className="mb-6 w-full rounded-xl border border-input bg-background px-4 py-3 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-          />
+          <div className="relative mb-6">
+            <input
+              id="login-password"
+              type={showPassword ? "text" : "password"}
+              name="password"
+              autoComplete="current-password"
+              required
+              maxLength={128}
+              placeholder="Sua senha"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              className="w-full rounded-xl border border-input bg-background px-4 py-3 pr-12 text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((visible) => !visible)}
+              aria-label={showPassword ? "Ocultar senha" : "Mostrar senha"}
+              className="absolute inset-y-0 right-0 flex items-center justify-center px-4 text-muted-foreground hover:text-foreground rounded-r-xl"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5" aria-hidden="true" /> : <Eye className="h-5 w-5" aria-hidden="true" />}
+            </button>
+          </div>
           <button
             type="submit"
             disabled={loading}
