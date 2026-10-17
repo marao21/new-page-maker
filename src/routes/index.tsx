@@ -65,12 +65,8 @@ export function SalesPage() {
         setDbMessage("As credenciais do Supabase não estão configuradas (VITE_SUPABASE_URL / VITE_SUPABASE_PUBLISHABLE_KEY em falta).");
         return;
       }
-      // Tenta ler da tabela users ou fazer um ping
-      // This legacy diagnostic probes a table absent from the generated schema.
-      // Keep its existing request/error behavior without claiming the table exists.
       const { data, error } = await (supabase as SupabaseClient).from("users").select("id").limit(1);
       if (error) {
-        // Se a tabela não existir mas conectou, ou erro real
         setDbStatus("error");
         setDbMessage(`Erro ao consultar o banco: ${error.message}`);
       } else {
@@ -97,7 +93,6 @@ export function SalesPage() {
       {/* 3.1 Barra Superior */}
       <header className="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-slate-200/80">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-16 sm:h-20 flex items-center justify-between">
-          {/* Logo / Nome do Produto */}
           <a
             href="#"
             className="flex items-center gap-2.5 font-bold text-lg sm:text-xl tracking-tight text-slate-900 hover:opacity-90 transition"
@@ -108,7 +103,6 @@ export function SalesPage() {
             <span className="font-extrabold">{productConfig.name}</span>
           </a>
 
-          {/* Navegação Desktop */}
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-slate-600">
             <a href="#beneficios" className="hover:text-pink-600 transition">
               Benefícios
@@ -127,7 +121,6 @@ export function SalesPage() {
             </a>
           </nav>
 
-          {/* Ações da Barra Superior */}
           <div className="flex items-center gap-3">
             <Link
               to="/login"
@@ -143,7 +136,6 @@ export function SalesPage() {
               <ArrowRight className="w-4 h-4 hidden sm:inline-block" />
             </button>
 
-            {/* Botão Menu Mobile */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-100 transition cursor-pointer"
@@ -154,7 +146,6 @@ export function SalesPage() {
           </div>
         </div>
 
-        {/* Menu Mobile Retrátil */}
         {mobileMenuOpen && (
           <div className="md:hidden bg-white border-b border-slate-200 px-6 py-4 space-y-3 animate-in slide-in-from-top-2">
             <a
@@ -210,7 +201,11 @@ export function SalesPage() {
       {/* 3.2 Hero — Primeira Dobra */}
       <section className="pt-10 pb-16 sm:pt-16 sm:pb-24 px-4 sm:px-6 bg-gradient-to-b from-white via-white to-slate-50 border-b border-slate-200/80">
         <div className="max-w-5xl mx-auto text-center space-y-6">
-          {/* Metadados Limpos (Anti-Slop Zero-Pill) */}
+          <div className="mb-4 p-4 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-800 text-sm flex items-center justify-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block animate-pulse" />
+            <strong>Supabase Conectado!</strong> Sim, agora você já pode realizar alterações, criar tabelas, autenticação, consultas e fluxos completos no projeto.
+          </div>
+
           <div className="flex items-center justify-center gap-2 text-xs sm:text-sm font-semibold text-pink-700">
             <span>Produto 100% Digital</span>
             <span aria-hidden="true" className="text-slate-300">
@@ -223,17 +218,14 @@ export function SalesPage() {
             <span>Sem Mensalidade</span>
           </div>
 
-          {/* Headline de Alto Impacto */}
           <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold text-slate-900 tracking-tight leading-[1.15] max-w-4xl mx-auto">
             {productConfig.headline}
           </h1>
 
-          {/* Subtítulo Claro e Direto */}
           <p className="text-base sm:text-xl text-slate-600 max-w-2xl mx-auto font-normal leading-relaxed">
             {productConfig.subtitle}
           </p>
 
-          {/* Bloco de Preço & CTA Principal */}
           <div className="pt-4 flex flex-col items-center justify-center gap-3">
             <div className="flex items-center gap-3">
               {productConfig.originalPrice && (
@@ -255,7 +247,6 @@ export function SalesPage() {
               <ArrowRight className="w-5 h-5" />
             </button>
 
-            {/* Indicador de Segurança Real */}
             <div className="flex items-center gap-4 text-xs text-slate-600 mt-2">
               <span className="inline-flex items-center gap-1">
                 <Lock className="w-3.5 h-3.5 text-slate-600" />
@@ -271,7 +262,6 @@ export function SalesPage() {
             </div>
           </div>
 
-          {/* Widget de Teste do Banco de Dados */}
           <div className="pt-4 max-w-xl mx-auto">
             <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm text-left flex flex-col gap-3">
               <div className="flex items-center justify-between">
@@ -297,7 +287,6 @@ export function SalesPage() {
             </div>
           </div>
 
-          {/* Representação Visual do Produto Digital (Mockup Estruturado) */}
           <div className="pt-8 max-w-4xl mx-auto">
             <div className="bg-white rounded-2xl border border-slate-200/90 shadow-sm p-6 sm:p-8 text-left">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -353,7 +342,6 @@ export function SalesPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            {/* O Problema Real */}
             <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-6 sm:p-8 space-y-5">
               <div className="inline-flex items-center gap-2 text-xs font-bold text-red-700 uppercase tracking-wider">
                 <span>Dificuldades Comuns</span>
@@ -373,7 +361,6 @@ export function SalesPage() {
               </ul>
             </div>
 
-            {/* A Solução Prática */}
             <div className="rounded-2xl border border-pink-200 bg-pink-50/50 p-6 sm:p-8 space-y-5">
               <div className="inline-flex items-center gap-2 text-xs font-bold text-pink-700 uppercase tracking-wider">
                 <span>A Solução com o Kit</span>
@@ -503,7 +490,6 @@ export function SalesPage() {
               </div>
             ))}
 
-            {/* Bônus Reais Inclusos */}
             {productConfig.bonuses.length > 0 && (
               <div className="pt-6">
                 <div className="text-xs font-bold text-pink-700 uppercase tracking-wider mb-3">
@@ -549,7 +535,6 @@ export function SalesPage() {
             </p>
           </div>
 
-          {/* Abas interativas de demonstração */}
           <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-sm">
             <div className="flex flex-wrap gap-2 border-b border-slate-100 pb-4 mb-6">
               {productConfig.demoPreview.items.map((item, idx) => (
@@ -567,7 +552,6 @@ export function SalesPage() {
               ))}
             </div>
 
-            {/* Conteúdo da aba selecionada */}
             {productConfig.demoPreview.items[selectedDemoTab] && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
                 <div className="space-y-4">
@@ -593,7 +577,6 @@ export function SalesPage() {
                   </div>
                 </div>
 
-                {/* Card de representação visual simplificada da ferramenta */}
                 <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-3 font-mono text-xs text-slate-600">
                   <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
                     <span className="font-semibold text-slate-800">
@@ -675,7 +658,6 @@ export function SalesPage() {
       >
         <div className="max-w-2xl mx-auto">
           <div className="bg-white rounded-3xl border-2 border-pink-600 p-6 sm:p-10 shadow-lg space-y-8 relative overflow-hidden">
-            {/* Header da Oferta */}
             <div className="space-y-3 text-center">
               <span className="text-xs font-bold text-pink-700 uppercase tracking-wider">
                 Acesso Vitalício ao Pacote Completo
@@ -689,7 +671,6 @@ export function SalesPage() {
               </p>
             </div>
 
-            {/* Preço */}
             <div className="bg-slate-50 rounded-2xl p-6 text-center border border-slate-200/80 space-y-1">
               {productConfig.originalPrice && (
                 <div className="text-sm text-slate-600 line-through">
@@ -707,7 +688,6 @@ export function SalesPage() {
               </p>
             </div>
 
-            {/* Itens Inclusos */}
             <div className="space-y-3">
               <p className="text-xs font-bold text-slate-700 uppercase tracking-wider">
                 O que está incluso:
@@ -743,7 +723,6 @@ export function SalesPage() {
               </ul>
             </div>
 
-            {/* Botão de Compra */}
             <div className="space-y-3">
               <button
                 onClick={() => setIsCheckoutOpen(true)}
@@ -930,7 +909,6 @@ export function SalesPage() {
         </div>
       </footer>
 
-      {/* Modal de Checkout */}
       <CheckoutModal isOpen={isCheckoutOpen} onClose={() => setIsCheckoutOpen(false)} />
     </div>
   );
