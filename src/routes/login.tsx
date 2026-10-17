@@ -34,7 +34,7 @@ export function Login() {
     let active = true;
     supabase.auth.getSession().then(({ data, error: sessionError }) => {
       if (active && !sessionError && data.session?.user) {
-        navigate({ to: "/", replace: true });
+        navigate({ to: "/membros", replace: true });
       }
     }).catch(() => {
       if (active) setError("Não foi possível verificar sua sessão. Atualize a página e tente novamente.");
@@ -65,7 +65,7 @@ export function Login() {
         setError(friendlyAuthError(loginError.message));
         return;
       }
-      await navigate({ to: "/", replace: true });
+      await navigate({ to: "/membros", replace: true });
     } catch {
       setError("Ocorreu um erro ao entrar. Verifique sua conexão e tente novamente.");
     } finally {
