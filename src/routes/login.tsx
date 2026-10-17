@@ -8,6 +8,10 @@ export const Route = createFileRoute("/login")({
     meta: [
       { title: "Entrar — Minha Página" },
       { name: "description", content: "Acesse sua conta com segurança." },
+      { property: "og:title", content: "Entrar — Kit Gestão Ágil & Organização Diária" },
+      { property: "og:description", content: "Acesse sua conta com segurança." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Login,

@@ -7,6 +7,10 @@ export const Route = createFileRoute("/termos")({
     meta: [
       { title: `Termos de Uso — ${productConfig.name}` },
       { name: "description", content: "Termos de uso e condições gerais da oferta." },
+      { property: "og:title", content: `Termos de Uso — ${productConfig.name}` },
+      { property: "og:description", content: "Termos de uso e condições gerais da oferta." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: TermsPage,

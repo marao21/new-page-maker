@@ -5,7 +5,7 @@ export type OrderStatus = "pending" | "approved" | "rejected" | "refunded" | "ca
 export interface OrderCustomer {
   name: string;
   email: string;
-  cpf?: string;
+  cpf?: string | undefined;
 }
 
 export interface OrderItem {

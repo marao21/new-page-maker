@@ -40,6 +40,7 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: productConfig.name },
       { property: "og:description", content: productConfig.subtitle },
       { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: SalesPage,
