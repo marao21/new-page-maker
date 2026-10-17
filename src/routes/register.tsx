@@ -77,7 +77,7 @@ export function Register() {
         </button>
         {message && (
           <p
-            className={`mt-4 text-sm ${message.type === 'error' ? 'text-red-600' : 'text-green-600'}`}
+            className={`mt-4 text-sm ${message.type === "error" ? "text-red-600" : "text-green-600"}`}
           >
             {message.text}
           </p>

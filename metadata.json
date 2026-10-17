@@ -1,0 +1,6 @@
+{
+  "name": "Kit Gestão Ágil & Organização Diária",
+  "description": "Página de vendas de alta conversão para o Kit Gestão Ágil & Organização Diária com checkout integrado via Mercado Pago (PIX e Cartão).",
+  "permissions": [],
+  "capabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

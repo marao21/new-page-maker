@@ -8,13 +8,10 @@ import {
   Scripts,
   type ErrorComponentProps,
 } from "@tanstack/react-router";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
-import { supabase } from "../integrations/supabase/client";
-import { ThemeToggle } from "../components/ui/ThemeToggle";
-import { Button } from "../components/ui/button";
 
 function NotFoundComponent() {
   return (
@@ -79,9 +76,20 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "Neo-Brutalist SaaS Landing Page" },
+      {
+        name: "description",
+        content:
+          "A vibrant Neo-Brutalist SaaS landing page with #ffe17c yellow, #171e19 charcoal, and #b7c6c2 sage.",
+      },
+      { property: "og:title", content: "Neo-Brutalist SaaS Landing Page" },
+      {
+        property: "og:description",
+        content:
+          "A vibrant Neo-Brutalist SaaS landing page with #ffe17c yellow, #171e19 charcoal, and #b7c6c2 sage.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:site", content: "@Lovable" },
     ],
     links: [
       {
@@ -119,75 +127,8 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
 
-  const [user, setUser] = useState<any>(null);
-  const router = useRouter();
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: sessionData }) => {
-      setUser(sessionData.session?.user ?? null);
-    });
-
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-    });
-
-    return () => {
-      listener?.subscription.unsubscribe();
-    };
-  }, []);
-
-  async function signOut() {
-    await supabase.auth.signOut();
-    router.navigate({ to: "/login", replace: true });
-  }
-
   return (
     <QueryClientProvider client={queryClient}>
-      {/* Header fixo, sofisticado */}
-      <header className="sticky top-0 z-50 border-b border-border/40 bg-background/80 backdrop-blur-md">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
-          {/* Logotipo */}
-          <Link to="/" className="font-display text-2xl font-bold">
-            <span>Minha Página</span>
-          </Link>
-
-          {/* Navegação + Ações */}
-          <div className="flex items-center gap-4">
-            <nav className="hidden items-center gap-6 md:flex">
-              <Link to="/" className="transition hover:opacity-80">
-                Início
-              </Link>
-              <Link to="/" hash="servicos" className="transition hover:opacity-80">
-                Serviços
-              </Link>
-              <Link to="/" hash="contato" className="transition hover:opacity-80">
-                Contato
-              </Link>
-            </nav>
-            <ThemeToggle />
-            {user ? (
-              <div className="flex items-center gap-2">
-                <span className="inline-flex items-center gap-1 rounded-full border border-primary/20 bg-primary/10 px-3 py-1 text-xs font-semibold text-primary">
-                  {user.email}
-                </span>
-                <Button onClick={signOut} variant="outline" className="rounded-full px-4 py-2" size="sm">
-                  Sair
-                </Button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Button asChild variant="outline" className="rounded-full px-4 py-2" size="sm">
-                  <Link to="/login">Entrar</Link>
-                </Button>
-                <Button asChild variant="outline" className="rounded-full px-4 py-2" size="sm">
-                  <Link to="/register">Criar conta</Link>
-                </Button>
-              </div>
-            )}
-          </div>
-        </div>
-      </header>
-
       <Outlet />
     </QueryClientProvider>
   );
