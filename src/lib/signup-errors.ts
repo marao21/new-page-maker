@@ -1,6 +1,6 @@
 export interface SignupError {
-  code?: string;
-  status?: number;
+  code?: string | undefined;
+  status?: number | undefined;
   message: string;
 }
 

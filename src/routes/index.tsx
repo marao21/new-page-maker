@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { productConfig } from "@/config/product";
 import { CheckoutModal } from "@/components/CheckoutModal";
 import {
@@ -65,7 +66,9 @@ export function SalesPage() {
         return;
       }
       // Tenta ler da tabela users ou fazer um ping
-      const { data, error } = await supabase.from("users").select("id").limit(1);
+      // This legacy diagnostic probes a table absent from the generated schema.
+      // Keep its existing request/error behavior without claiming the table exists.
+      const { data, error } = await (supabase as SupabaseClient).from("users").select("id").limit(1);
       if (error) {
         // Se a tabela não existir mas conectou, ou erro real
         setDbStatus("error");
