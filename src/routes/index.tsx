@@ -791,7 +791,7 @@ export function SalesPage() {
           <div className="pt-2">
             <button
               onClick={() => setIsCheckoutOpen(true)}
-              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-pink-600 hover:bg-pink-700 active:bg-pink-800 text-white font-bold text-lg shadow-sm hover:shadow transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-pink-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
+              className="inline-flex items-center justify-center gap-2 px-8 py-4 rounded-xl bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-bold text-lg shadow-lg shadow-red-900/20 hover:shadow-xl transition-all cursor-pointer focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-900"
             >
               <span>Quero Acessar o Material Agora</span>
               <ArrowRight className="w-5 h-5" />
