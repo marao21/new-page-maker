@@ -1,5 +1,8 @@
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import { supabase } from "../integrations/supabase/client";
+
+// The database types are regenerated when the migration is applied; keep this preview compatible meanwhile.
+const rpDb = supabase as any;
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Activity,
@@ -92,7 +95,7 @@ function LovableRpDemo() {
           return;
         }
         const userId = sessionData.session.user.id;
-        const { data: profile, error: profileError } = await supabase
+        const { data: profile, error: profileError } = await rpDb
           .from("lovable_rp_profiles")
           .select("access_status")
           .eq("id", userId)
@@ -104,8 +107,8 @@ function LovableRpDemo() {
         }
         setCurrentUserId(userId);
         const [projectResult, commandResult] = await Promise.all([
-          supabase.from("lovable_rp_projects").select("id,name,repository_full_name,branch,status").eq("owner_id", userId).order("created_at", { ascending: false }),
-          supabase.from("lovable_rp_commands").select("id,prompt,status,created_at,project_id").eq("owner_id", userId).order("created_at", { ascending: false }).limit(10),
+          rpDb.from("lovable_rp_projects").select("id,name,repository_full_name,branch,status").eq("owner_id", userId).order("created_at", { ascending: false }),
+          rpDb.from("lovable_rp_commands").select("id,prompt,status,created_at,project_id").eq("owner_id", userId).order("created_at", { ascending: false }).limit(10),
         ]);
         if (!active) return;
         if (projectResult.error || commandResult.error) {
@@ -136,7 +139,7 @@ function LovableRpDemo() {
       return;
     }
     if (currentUserId && databaseStatus === "Supabase conectado") {
-      const { data, error } = await supabase.from("lovable_rp_commands").insert({ owner_id: currentUserId, prompt, status: "draft" }).select("id,prompt,status,created_at").single();
+      const { data, error } = await rpDb.from("lovable_rp_commands").insert({ owner_id: currentUserId, prompt, status: "draft" }).select("id,prompt,status,created_at").single();
       if (error || !data) {
         setNotice("Não foi possível salvar no Supabase. Verifique a migração e as permissões; nenhum comando foi executado.");
         return;
