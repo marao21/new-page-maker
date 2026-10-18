@@ -87,6 +87,7 @@ function LovableRpDemo() {
   const [selectedBranch, setSelectedBranch] = useState("main");
   const [connectingGithub, setConnectingGithub] = useState(false);
   const [githubDeviceUserCode, setGithubDeviceUserCode] = useState("");
+  const [githubClientId, setGithubClientId] = useState(() => window.sessionStorage.getItem("lovable-rp-web-github-client-id") || ((import.meta as any).env?.VITE_GITHUB_CLIENT_ID as string | undefined) || "");
   const [githubDeviceBusy, setGithubDeviceBusy] = useState(false);
   const [testingGemini, setTestingGemini] = useState(false);
   const [geminiConnected, setGeminiConnected] = useState(false);
@@ -224,8 +225,9 @@ function LovableRpDemo() {
   }
 
   async function handleStartGithubDeviceFlow() {
-    const clientId = (import.meta as any).env?.VITE_GITHUB_CLIENT_ID as string | undefined;
-    if (!clientId) { setNotice("Configure VITE_GITHUB_CLIENT_ID no ambiente do site e ative Device Flow no OAuth App do GitHub."); return; }
+    const clientId = githubClientId.trim();
+    if (!clientId) { setNotice("Informe o Client ID público do OAuth App Lovable RP com Device Flow ativado."); return; }
+    window.sessionStorage.setItem("lovable-rp-web-github-client-id", clientId);
     setGithubDeviceBusy(true); setGithubDeviceUserCode(""); setNotice("");
     try {
       const response = await fetch("https://github.com/login/device/code", { method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ client_id: clientId, scope: "repo read:user" }) });
@@ -508,6 +510,9 @@ function LovableRpDemo() {
                     <div className="mt-5 grid gap-4 lg:grid-cols-2">
                       <div className="rounded-xl border border-slate-200 p-4">
                         <div className="flex items-center gap-2"><Github className="h-5 w-5" /><h4 className="text-sm font-bold">GitHub</h4>{githubUser && <span className="ml-auto rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Conectado</span>}</div>
+                        <label htmlFor="rp-github-client-id" className="mt-4 block text-xs font-semibold text-slate-600">Client ID do OAuth App</label>
+                        <input id="rp-github-client-id" type="text" autoComplete="off" value={githubClientId} onChange={(event) => { setGithubClientId(event.target.value); window.sessionStorage.setItem("lovable-rp-web-github-client-id", event.target.value); }} placeholder="Ex.: Iv1.xxxxx ou Ov23..." className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100" />
+                        <p className="mt-2 text-[11px] leading-5 text-slate-500">Use o Client ID público do OAuth App da Lovable RP, com Device Flow ativado. Não cole o Client Secret nem seu token pessoal.</p>
                         <p className="mt-3 text-xs leading-5 text-slate-500">Conecte sua conta pela página oficial do GitHub. O código será gerado pelo GitHub e a conexão será verificada automaticamente.</p>
                         <button onClick={handleStartGithubDeviceFlow} disabled={githubDeviceBusy} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 via-fuchsia-600 to-orange-400 px-4 py-3 text-sm font-bold text-white shadow-sm hover:brightness-105 disabled:opacity-60"><Github className="h-4 w-4" />{githubDeviceBusy ? "Aguardando autorização..." : githubUser ? "Reconectar GitHub" : "Conectar GitHub"}<ArrowRight className="h-4 w-4" /></button>
                         {githubDeviceUserCode && <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-4"><p className="text-xs font-bold text-violet-950">Autorize no GitHub</p><p className="mt-1 text-xs text-violet-800">Use o código abaixo na página que foi aberta.</p><div className="mt-3 rounded-lg bg-violet-950 px-3 py-4 text-center font-mono text-2xl font-extrabold tracking-[0.2em] text-fuchsia-300">{githubDeviceUserCode}</div><button onClick={() => { void navigator.clipboard.writeText(githubDeviceUserCode); setNotice("Código de autorização copiado."); }} className="mt-2 w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs font-bold text-violet-950">Copiar código</button><p className="mt-2 text-center text-[11px] text-violet-800">Aguardando autorização… verificação automática</p></div>}
