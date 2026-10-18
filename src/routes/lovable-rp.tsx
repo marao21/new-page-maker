@@ -74,6 +74,7 @@ function LovableRpDemo() {
   const [databaseStatus, setDatabaseStatus] = useState("Prévia sem login");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Array<{ id: string; name: string; repository_full_name: string | null; branch: string; status: string }>>([]);
+  const [demoUsers, setDemoUsers] = useState([{ id: 1, name: "Ana Costa", email: "ana@exemplo.com", status: "Aguardando aprovação" }, { id: 2, name: "Carlos Lima", email: "carlos@exemplo.com", status: "Aprovado" }, { id: 3, name: "Paula Souza", email: "paula@exemplo.com", status: "Bloqueado" }]);
   const [commandText, setCommandText] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -245,7 +246,7 @@ function LovableRpDemo() {
               <button onClick={() => { setActiveNav("Projetos"); setNotice("A conexão real com repositórios será configurada depois."); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-200 transition hover:bg-slate-700"><Plus className="h-4 w-4" /> Novo projeto</button>
             </div>
 
-            <section className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-br from-[#24152f] via-[#3b1740] to-[#6d174e] p-5 text-white shadow-xl shadow-pink-100 sm:p-8">
+            <section hidden={activeNav !== "Visão geral" && activeNav !== "Comandos"} className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-br from-[#24152f] via-[#3b1740] to-[#6d174e] p-5 text-white shadow-xl shadow-pink-100 sm:p-8">
               <div className="pointer-events-none absolute -right-16 -top-28 h-72 w-72 rounded-full border-[42px] border-white/5" />
               <div className="pointer-events-none absolute right-28 top-20 h-36 w-36 rounded-full bg-pink-500/20 blur-3xl" />
               <div className="relative grid gap-7 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
@@ -262,7 +263,55 @@ function LovableRpDemo() {
 
             {notice && <div role="status" className="mb-5 flex items-start gap-3 rounded-xl border border-pink-200 bg-pink-50 px-4 py-3 text-sm text-pink-900"><CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" /><p className="flex-1">{notice}</p><button onClick={() => setNotice("")} aria-label="Fechar aviso"><X className="h-4 w-4" /></button></div>}
 
-            <section className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {activeNav !== "Visão geral" && activeNav !== "Comandos" && (
+              <section className="mb-7 grid gap-5 xl:grid-cols-2">
+                {activeNav === "Projetos" && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
+                    <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                      <div><h3 className="font-bold">Seus projetos</h3><p className="mt-1 text-sm text-slate-500">Repositórios que poderão ser gerenciados pelo painel.</p></div>
+                      <button onClick={() => setNotice("A conexão OAuth com GitHub e o cadastro de repositórios serão ativados na próxima etapa.")} className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-pink-700"><Plus className="h-4 w-4" /> Conectar GitHub</button>
+                    </div>
+                    {(databaseStatus === "Supabase conectado" ? projects : [{ id: "demo", name: "new-page-maker", repository_full_name: "marao21/new-page-maker", branch: "main", status: "demo" }]).map((project) => (
+                      <div key={project.id} className="mb-3 flex flex-col gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Github className="h-5 w-5" /></div>
+                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{project.name}</p><p className="truncate text-xs text-slate-500">{project.repository_full_name ?? "Repositório não informado"}</p></div>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Branch: {project.branch}</span>
+                        <button onClick={() => setNotice("O projeto foi selecionado apenas nesta prévia. A execução pelo GitHub ainda precisa ser integrada.")} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold hover:bg-slate-50">Selecionar</button>
+                      </div>
+                    ))}
+                    {databaseStatus === "Supabase conectado" && projects.length === 0 && <p className="py-6 text-center text-sm text-slate-400">Nenhum projeto salvo no banco ainda.</p>}
+                  </div>
+                )}
+                {activeNav === "Histórico" && (
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
+                    <div className="border-b border-slate-100 p-5"><h3 className="font-bold">Histórico de comandos</h3><p className="mt-1 text-sm text-slate-500">Pedidos recentes e estado de cada operação.</p></div>
+                    <div className="divide-y divide-slate-100">
+                      {filteredActivity.map((item) => <div key={item.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center"><div className="min-w-0 flex-1"><p className="break-words text-sm font-semibold">{item.title}</p><p className="mt-1 text-xs text-slate-500">{item.detail}</p><p className="mt-1 text-[11px] text-slate-400">{item.time}</p></div><span className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${item.status === "Concluído" ? "bg-emerald-50 text-emerald-700" : item.status === "Erro" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>{item.status}</span></div>)}
+                      {filteredActivity.length === 0 && <p className="p-8 text-center text-sm text-slate-400">Nenhum comando encontrado.</p>}
+                    </div>
+                  </div>
+                )}
+                {activeNav === "Conexões" && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
+                    <h3 className="font-bold">Conexões e integrações</h3><p className="mt-1 text-sm text-slate-500">Estado das conexões necessárias para a execução real.</p>
+                    <div className="mt-5 grid gap-3 md:grid-cols-3">
+                      {[{ name: "GitHub", detail: "Repositórios, branches e commits", icon: Github }, { name: "Supabase", detail: "Banco de dados e permissões", icon: DatabaseIcon }, { name: "ChatGPT", detail: "Motor para processar solicitações", icon: Bot }].map((connection) => { const Icon = connection.icon; const connected = connection.name === "Supabase" && databaseStatus === "Supabase conectado"; return <div key={connection.name} className="rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-700"><Icon className="h-5 w-5" /></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${connected ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{connected ? "Conectado" : "Pendente"}</span></div><p className="mt-4 text-sm font-bold">{connection.name}</p><p className="mt-1 text-xs leading-5 text-slate-500">{connection.detail}</p><button onClick={() => setNotice(connection.name === "Supabase" ? "O banco precisa estar ativo e receber a migração do Lovable RP Web." : `A integração real com ${connection.name} ainda não foi configurada.`)} className="mt-4 text-xs font-bold text-pink-600 hover:text-pink-700">Ver configuração <ArrowRight className="ml-1 inline h-3 w-3" /></button></div>; })}
+                    </div>
+                    <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">O painel ainda não executa comandos em repositórios. Essa etapa exige conectar as credenciais autorizadas e implementar o executor no servidor.</p>
+                  </div>
+                )}
+                {activeNav === "Usuários" && (
+                  <div className="rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5"><div><h3 className="font-bold">Controle de acesso</h3><p className="mt-1 text-sm text-slate-500">Exemplo visual da aprovação manual que será implementada depois.</p></div><span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">Somente demonstração</span></div>
+                    <div className="divide-y divide-slate-100">
+                      {demoUsers.map((user) => <div key={user.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 text-sm font-bold text-pink-700">{user.name.split(" ").map((part) => part[0]).slice(0,2).join("")}</div><div className="min-w-0 flex-1"><p className="text-sm font-bold">{user.name}</p><p className="text-xs text-slate-500">{user.email}</p></div><span className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${user.status === "Aprovado" ? "bg-emerald-50 text-emerald-700" : user.status === "Bloqueado" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>{user.status}</span><div className="flex gap-2"><button onClick={() => { setDemoUsers((items) => items.map((item) => item.id === user.id ? { ...item, status: "Aprovado" } : item)); setNotice(`Aprovação de demonstração: ${user.name}. Nada foi alterado no banco.`); }} className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">Aprovar</button><button onClick={() => { setDemoUsers((items) => items.map((item) => item.id === user.id ? { ...item, status: "Bloqueado" } : item)); setNotice(`Bloqueio de demonstração: ${user.name}. Nada foi alterado no banco.`); }} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50">Bloquear</button></div></div>)}
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            <section hidden={activeNav !== "Visão geral"} className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {[
                 { label: "Projetos conectados", value: String(projectCount).padStart(2, "0"), detail: databaseStatus === "Supabase conectado" ? "Dados do Supabase" : "Projeto ilustrativo", icon: FolderGit2, trend: databaseStatus === "Supabase conectado" ? "Supabase" : "Prévia" },
                 { label: "Comandos registrados", value: String(activity.length).padStart(2, "0"), detail: databaseStatus === "Supabase conectado" ? "Dados do banco" : "Histórico de demonstração", icon: Command, trend: databaseStatus === "Supabase conectado" ? "Banco" : "Prévia" },
@@ -274,7 +323,7 @@ function LovableRpDemo() {
               })}
             </section>
 
-            <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+            <section hidden={activeNav !== "Visão geral"} className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
               <div className="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm shadow-slate-100/60">
                 <div className="flex flex-col gap-3 border-b border-slate-100 p-5 sm:flex-row sm:items-center sm:justify-between"><div><h3 className="font-bold">Atividade recente</h3><p className="mt-1 text-xs text-slate-500">Pedidos e atualizações do workspace</p></div><div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" /><input value={searchText} onChange={(event) => setSearchText(event.target.value)} placeholder="Buscar atividade" className="w-full rounded-xl border border-slate-200 py-2 pl-9 pr-3 text-xs outline-none focus:border-pink-300 sm:w-48" /></div></div>
                 <div className="divide-y divide-slate-100">
