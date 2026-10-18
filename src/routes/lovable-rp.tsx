@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
+import { createFileRoute } from "@tanstack/react-router";
 import { supabase } from "../integrations/supabase/client";
 import { executeGitHubEdit, listGitHubRepositories, validateGeminiApiKey, validateGitHubToken, type GitHubRepoOption } from "../lib/lovable-rp-engine";
-
-// The database types are regenerated when the migration is applied; keep this preview compatible meanwhile.
-const rpDb = supabase as any;
-import { createFileRoute } from "@tanstack/react-router";
 import {
   Activity,
   ArrowRight,
@@ -37,11 +34,14 @@ import {
   Zap,
 } from "lucide-react";
 
+// The database types are regenerated when the migration is applied; keep this preview compatible meanwhile.
+const rpDb = supabase as any;
+
 export const Route = createFileRoute("/lovable-rp")({
   head: () => ({
     meta: [
-      { title: "Lovable RP Web — Painel de demonstração" },
-      { name: "description", content: "Prévia do painel web da Lovable RP." },
+      { title: "Lovable RP Web — Assistente de projetos" },
+      { name: "description", content: "Painel web da Lovable RP para gerenciar projetos e executar alterações no GitHub." },
     ],
   }),
   component: LovableRpDemo,
@@ -85,6 +85,7 @@ function LovableRpDemo() {
   const [selectedBranch, setSelectedBranch] = useState("main");
   const [connectingGithub, setConnectingGithub] = useState(false);
   const [testingGemini, setTestingGemini] = useState(false);
+  const [geminiConnected, setGeminiConnected] = useState(false);
   const [executing, setExecuting] = useState(false);
   const [executionProgress, setExecutionProgress] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -99,6 +100,7 @@ function LovableRpDemo() {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setGithubToken(window.sessionStorage.getItem("lovable-rp-web-github-token") || "");
+      setGithubUser(window.sessionStorage.getItem("lovable-rp-web-github-user") || "");
       setGeminiApiKey(window.sessionStorage.getItem("lovable-rp-web-gemini-key") || "");
       setSelectedRepository(window.sessionStorage.getItem("lovable-rp-web-repository") || "marao21/new-page-maker");
       setSelectedBranch(window.sessionStorage.getItem("lovable-rp-web-branch") || "main");
@@ -166,6 +168,7 @@ function LovableRpDemo() {
         setSelectedBranch(repos[0].default_branch);
       }
       window.sessionStorage.setItem("lovable-rp-web-github-token", githubToken.trim());
+      window.sessionStorage.setItem("lovable-rp-web-github-user", user.login);
       window.sessionStorage.setItem("lovable-rp-web-repository", selectedRepository);
       window.sessionStorage.setItem("lovable-rp-web-branch", selectedBranch);
       setNotice(`GitHub conectado como @${user.login}. ${repos.length} repositórios encontrados.`);
@@ -179,6 +182,7 @@ function LovableRpDemo() {
     setTestingGemini(true);
     try {
       await validateGeminiApiKey(geminiApiKey);
+      setGeminiConnected(true);
       window.sessionStorage.setItem("lovable-rp-web-gemini-key", geminiApiKey.trim());
       setNotice("Gemini conectado e testado. A chave fica apenas nesta sessão do navegador.");
     } catch (error) {
@@ -384,7 +388,7 @@ function LovableRpDemo() {
                       <div className="rounded-xl border border-slate-200 p-4">
                         <div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-pink-600" /><h4 className="text-sm font-bold">Gemini API</h4>{geminiApiKey && <span className="ml-auto rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Chave informada</span>}</div>
                         <label htmlFor="rp-gemini-key" className="mt-4 block text-xs font-semibold text-slate-600">Chave da API Gemini</label>
-                        <input id="rp-gemini-key" type="password" autoComplete="off" value={geminiApiKey} onChange={(event) => setGeminiApiKey(event.target.value)} placeholder="AIza..." className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100" />
+                        <input id="rp-gemini-key" type="password" autoComplete="off" value={geminiApiKey} onChange={(event) => { setGeminiApiKey(event.target.value); setGeminiConnected(false); }} placeholder="AIza..." className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100" />
                         <p className="mt-2 text-[11px] leading-5 text-slate-500">A execução web usa uma API de IA; não usa automaticamente a sessão ou os conectores do ChatGPT.</p>
                         <button onClick={handleTestGemini} disabled={testingGemini} className="mt-3 w-full rounded-xl bg-pink-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-pink-700 disabled:opacity-60">{testingGemini ? "Testando chave..." : "Testar e salvar nesta sessão"}</button>
                       </div>
@@ -395,7 +399,7 @@ function LovableRpDemo() {
                     </div>
                     <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Segurança: os tokens ficam temporariamente no sessionStorage desta aba, não no banco. Use somente em ambiente confiável e remova a sessão ao terminar. A execução cria um commit GitHub; revise sempre os arquivos antes de publicar.</p>
                     <div className="mt-5 grid gap-3 md:grid-cols-3">
-                      {[{ name: "GitHub", detail: "Repositórios, branches e commits", icon: Github }, { name: "Supabase", detail: "Banco de dados e permissões", icon: DatabaseIcon }, { name: "Gemini", detail: "IA para analisar e editar arquivos", icon: Bot }].map((connection) => { const Icon = connection.icon; const connected = connection.name === "GitHub" ? !!githubUser : connection.name === "Gemini" ? !!geminiApiKey : databaseStatus === "Supabase conectado"; return <div key={connection.name} className="rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-700"><Icon className="h-5 w-5" /></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${connected ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{connected ? "Conectado" : "Pendente"}</span></div><p className="mt-4 text-sm font-bold">{connection.name}</p><p className="mt-1 text-xs leading-5 text-slate-500">{connection.detail}</p><button onClick={() => setNotice(connection.name === "Supabase" ? "O banco precisa estar ativo e receber a migração do Lovable RP Web." : `A integração real com ${connection.name} ainda não foi configurada.`)} className="mt-4 text-xs font-bold text-pink-600 hover:text-pink-700">Ver configuração <ArrowRight className="ml-1 inline h-3 w-3" /></button></div>; })}
+                      {[{ name: "GitHub", detail: "Repositórios, branches e commits", icon: Github }, { name: "Supabase", detail: "Banco de dados e permissões", icon: DatabaseIcon }, { name: "Gemini", detail: "IA para analisar e editar arquivos", icon: Bot }].map((connection) => { const Icon = connection.icon; const connected = connection.name === "GitHub" ? !!githubUser : connection.name === "Gemini" ? geminiConnected : databaseStatus === "Supabase conectado"; return <div key={connection.name} className="rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-700"><Icon className="h-5 w-5" /></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${connected ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{connected ? "Conectado" : "Pendente"}</span></div><p className="mt-4 text-sm font-bold">{connection.name}</p><p className="mt-1 text-xs leading-5 text-slate-500">{connection.detail}</p><button onClick={() => setNotice(connection.name === "Supabase" ? "O banco precisa estar ativo e receber a migração do Lovable RP Web." : `A integração real com ${connection.name} ainda não foi configurada.`)} className="mt-4 text-xs font-bold text-pink-600 hover:text-pink-700">Ver configuração <ArrowRight className="ml-1 inline h-3 w-3" /></button></div>; })}
                     </div>
                     <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">A execução de código usa o GitHub e a Gemini API. O histórico no Supabase depende de banco ativo, migração aplicada e usuário autenticado/aprovado. O modo “ChatGPT da minha sessão” da extensão não pode ser reutilizado diretamente por um site comum.</p>
                   </div>
@@ -445,7 +449,7 @@ function LovableRpDemo() {
                 </div>
               </div>
             </section>
-            <footer className="mt-8 flex flex-col justify-between gap-2 border-t border-slate-200 pt-5 text-[11px] text-slate-400 sm:flex-row"><span>Lovable RP Web · interface de demonstração</span><span>Os dados desta tela são ilustrativos e ainda não são salvos no banco.</span></footer>
+            <footer className="mt-8 flex flex-col justify-between gap-2 border-t border-slate-200 pt-5 text-[11px] text-slate-400 sm:flex-row"><span>Lovable RP Web · prévia sem login</span><span>Tokens ficam nesta sessão; o histórico Supabase exige banco ativo e acesso aprovado.</span></footer>
           </div>
         </main>
       </div>
