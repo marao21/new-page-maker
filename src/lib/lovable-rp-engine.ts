@@ -53,6 +53,12 @@ export async function validateGitHubToken(token: string) {
   return { login: user.login, name: user.name || user.login };
 }
 
+export async function validateGeminiApiKey(apiKey: string) {
+  if (!apiKey.trim()) throw new Error("Informe uma chave da API Gemini.");
+  await callGemini(apiKey, 'Responda somente JSON: {"ok":true,"message":"conectado"}.');
+  return true;
+}
+
 export async function listGitHubRepositories(token: string): Promise<GitHubRepoOption[]> {
   const data = await githubRequest<any[]>(token.trim(), "/user/repos?per_page=100&sort=updated&affiliation=owner,collaborator,organization_member");
   return data.map((repo) => ({
@@ -113,6 +119,7 @@ function isAllowedTextPath(path: string, size = 0) {
   if (/(^|\/)(\.env(?:\.|$)|secrets?\.|credentials?\.|id_rsa|\.npmrc|\.pypirc)/i.test(path)) return false;
   if (/(^|\/)(package-lock\.json|pnpm-lock\.yaml|yarn\.lock|bun\.lockb?)$/i.test(path)) return false;
   if (path.startsWith(".git/") || path.startsWith("node_modules/")) return false;
+  if (path.startsWith(".github/workflows/") || path.startsWith(".github/actions/")) return false;
   if (size > 180000) return false;
   return /\.(tsx?|jsx?|mjs|cjs|vue|svelte|astro|css|scss|html|json|md|mdx|sql|yaml|yml|toml)$/i.test(path);
 }
