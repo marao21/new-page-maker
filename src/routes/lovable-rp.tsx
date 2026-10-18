@@ -448,7 +448,7 @@ function LovableRpDemo() {
                       <div><h3 className="font-bold">Seus projetos</h3><p className="mt-1 text-sm text-slate-500">Repositórios que poderão ser gerenciados pelo painel.</p></div>
                       <button onClick={() => setActiveNav("Conexões")} className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-pink-700"><Plus className="h-4 w-4" /> Configurar conexões</button>
                     </div>
-                    {(databaseStatus === "Supabase conectado" ? projects : [{ id: "demo", name: "new-page-maker", repository_full_name: "marao21/new-page-maker", branch: "main", status: "demo" }]).map((project) => (
+                    {projects.map((project) => (
                       <div key={project.id} className="mb-3 flex flex-col gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center">
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Github className="h-5 w-5" /></div>
                         <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{project.name}</p><p className="truncate text-xs text-slate-500">{project.repository_full_name ?? "Repositório não informado"}</p></div>
@@ -511,7 +511,7 @@ function LovableRpDemo() {
                     {!signedInEmail ? <p className="p-6 text-sm text-slate-500">Faça login na área Conexões. A lista só é exibida para administradores autenticados e aprovados.</p> : !isAdmin ? <p className="p-6 text-sm text-slate-500">Esta área exige o perfil de administrador aprovado. Seu status atual: {databaseStatus}.</p> : adminUsers.length === 0 ? <p className="p-6 text-sm text-slate-500">Nenhum usuário carregado ou o Supabase está indisponível.</p> :
                       <div className="divide-y divide-slate-100">{adminUsers.map((user) => <div key={user.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 text-sm font-bold text-pink-700">{(user.full_name || user.email || "U").split(" ").map((part) => part[0]).slice(0,2).join("").toUpperCase()}</div><div className="min-w-0 flex-1"><p className="break-all text-sm font-bold">{user.full_name || "Sem nome"}</p><p className="break-all text-xs text-slate-500">{user.email || user.id}</p></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{user.role} · {user.access_status}</span><div className="flex flex-wrap gap-2"><button onClick={() => void handleAdminStatus(user.id,"approved")} className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">Aprovar</button><button onClick={() => void handleAdminStatus(user.id,"pending")} className="rounded-lg border border-amber-200 px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50">Pendente</button><button onClick={() => void handleAdminStatus(user.id,"blocked")} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50">Bloquear</button></div></div>)}</div>}
                   </div>
-                )}}
+                )}
               </section>
             )}
 
@@ -519,7 +519,7 @@ function LovableRpDemo() {
               {[
                 { label: "Projetos conectados", value: String(projectCount).padStart(2, "0"), detail: databaseStatus === "Supabase conectado" ? "Dados do Supabase" : repoOptions.length ? "Repositório GitHub selecionado" : "Nenhum repositório verificado", icon: FolderGit2, trend: databaseStatus === "Supabase conectado" ? "Supabase" : repoOptions.length ? "GitHub" : "Aguardando conexão" }, 
                 { label: "Comandos registrados", value: String(activity.length).padStart(2, "0"), detail: databaseStatus === "Supabase conectado" ? "Histórico do banco" : "Atividade desta sessão", icon: Command, trend: databaseStatus === "Supabase conectado" ? "Banco" : "Sessão" }, 
-                { label: "Tarefas concluídas", value: "02", detail: "Histórico ilustrativo", icon: CheckCircle2, trend: "Demo" },
+                { label: "Tarefas concluídas", value: String(activity.filter((item) => item.status === "Concluído").length).padStart(2, "0"), detail: "Comandos concluídos nesta sessão", icon: CheckCircle2, trend: "Sessão" },
                 { label: "Tempo economizado", value: "—", detail: "Disponível após integração", icon: Clock3, trend: "Em breve" },
               ].map((stat) => {
                 const Icon = stat.icon;
