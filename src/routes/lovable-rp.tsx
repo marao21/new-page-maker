@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import { supabase } from "../integrations/supabase/client";
+import { executeGitHubEdit, listGitHubRepositories, validateGeminiApiKey, validateGitHubToken, type GitHubRepoOption } from "../lib/lovable-rp-engine";
 
 // The database types are regenerated when the migration is applied; keep this preview compatible meanwhile.
 const rpDb = supabase as any;
@@ -76,6 +77,16 @@ function LovableRpDemo() {
   const [projects, setProjects] = useState<Array<{ id: string; name: string; repository_full_name: string | null; branch: string; status: string }>>([]);
   const [demoUsers, setDemoUsers] = useState([{ id: 1, name: "Ana Costa", email: "ana@exemplo.com", status: "Aguardando aprovação" }, { id: 2, name: "Carlos Lima", email: "carlos@exemplo.com", status: "Aprovado" }, { id: 3, name: "Paula Souza", email: "paula@exemplo.com", status: "Bloqueado" }]);
   const [commandText, setCommandText] = useState("");
+  const [githubToken, setGithubToken] = useState("");
+  const [geminiApiKey, setGeminiApiKey] = useState("");
+  const [githubUser, setGithubUser] = useState("");
+  const [repoOptions, setRepoOptions] = useState<GitHubRepoOption[]>([]);
+  const [selectedRepository, setSelectedRepository] = useState("marao21/new-page-maker");
+  const [selectedBranch, setSelectedBranch] = useState("main");
+  const [connectingGithub, setConnectingGithub] = useState(false);
+  const [testingGemini, setTestingGemini] = useState(false);
+  const [executing, setExecuting] = useState(false);
+  const [executionProgress, setExecutionProgress] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
   const [activity, setActivity] = useState(initialActivity);
@@ -84,6 +95,15 @@ function LovableRpDemo() {
     () => activity.filter((item) => (item.title + " " + item.detail).toLowerCase().includes(searchText.toLowerCase())),
     [activity, searchText],
   );
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setGithubToken(window.sessionStorage.getItem("lovable-rp-web-github-token") || "");
+      setGeminiApiKey(window.sessionStorage.getItem("lovable-rp-web-gemini-key") || "");
+      setSelectedRepository(window.sessionStorage.getItem("lovable-rp-web-repository") || "marao21/new-page-maker");
+      setSelectedBranch(window.sessionStorage.getItem("lovable-rp-web-branch") || "main");
+    }
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -133,26 +153,84 @@ function LovableRpDemo() {
     return () => { active = false; };
   }, []);
 
-  async function previewCommand() {
+  async function handleConnectGithub() {
+    if (!githubToken.trim()) { setNotice("Cole um token do GitHub com acesso de leitura e gravação de Contents."); return; }
+    setConnectingGithub(true);
+    try {
+      const user = await validateGitHubToken(githubToken);
+      const repos = await listGitHubRepositories(githubToken);
+      setGithubUser(user.login);
+      setRepoOptions(repos);
+      if (!repos.some((repo) => repo.full_name === selectedRepository) && repos[0]) {
+        setSelectedRepository(repos[0].full_name);
+        setSelectedBranch(repos[0].default_branch);
+      }
+      window.sessionStorage.setItem("lovable-rp-web-github-token", githubToken.trim());
+      window.sessionStorage.setItem("lovable-rp-web-repository", selectedRepository);
+      window.sessionStorage.setItem("lovable-rp-web-branch", selectedBranch);
+      setNotice(`GitHub conectado como @${user.login}. ${repos.length} repositórios encontrados.`);
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Não foi possível conectar ao GitHub.");
+    } finally { setConnectingGithub(false); }
+  }
+
+  async function handleTestGemini() {
+    if (!geminiApiKey.trim()) { setNotice("Cole sua chave da API Gemini."); return; }
+    setTestingGemini(true);
+    try {
+      await validateGeminiApiKey(geminiApiKey);
+      window.sessionStorage.setItem("lovable-rp-web-gemini-key", geminiApiKey.trim());
+      setNotice("Gemini conectado e testado. A chave fica apenas nesta sessão do navegador.");
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Não foi possível testar a chave Gemini.");
+    } finally { setTestingGemini(false); }
+  }
+
+  async function executeCommand() {
     const prompt = commandText.trim();
-    if (!prompt) {
-      setNotice("Escreva um comando para visualizar como ele aparecerá na fila.");
+    if (!prompt) { setNotice("Escreva o que você deseja alterar no projeto."); return; }
+    if (!githubToken.trim() || !geminiApiKey.trim()) {
+      setNotice("Para executar de verdade, conecte o GitHub e teste a chave Gemini na aba Conexões.");
+      setActiveNav("Conexões");
       return;
     }
-    if (currentUserId && databaseStatus === "Supabase conectado") {
-      const { data, error } = await rpDb.from("lovable_rp_commands").insert({ owner_id: currentUserId, prompt, status: "draft" }).select("id,prompt,status,created_at").single();
-      if (error || !data) {
-        setNotice("Não foi possível salvar no Supabase. Verifique a migração e as permissões; nenhum comando foi executado.");
-        return;
+    setExecuting(true);
+    setExecutionProgress("Iniciando execução...");
+    setNotice("");
+    try {
+      const result = await executeGitHubEdit({
+        githubToken, geminiApiKey, repository: selectedRepository, branch: selectedBranch, request: prompt,
+        onProgress: setExecutionProgress,
+      });
+      let savedToDatabase = false;
+      if (currentUserId && databaseStatus === "Supabase conectado") {
+        try {
+          const projectId = projects.find((project) => project.repository_full_name === result.repository)?.id ?? null;
+          const { data: savedCommand, error: saveError } = await rpDb.from("lovable_rp_commands").insert({
+            owner_id: currentUserId, project_id: projectId, prompt, status: "completed",
+            result: JSON.stringify({ summary: result.summary, commitUrl: result.commitUrl, files: result.files }),
+          }).select("id").single();
+          if (!saveError && savedCommand) {
+            await rpDb.from("lovable_rp_activity").insert({ owner_id: currentUserId, project_id: projectId, command_id: savedCommand.id, event_type: "command.completed", message: `${result.summary} · ${result.files.length} arquivo(s)` });
+            savedToDatabase = true;
+          }
+        } catch { savedToDatabase = false; }
       }
-      setActivity((current) => [{ id: data.id, title: data.prompt.slice(0, 70), detail: "Salvo no Supabase · aguardando executor", time: new Date(data.created_at).toLocaleString("pt-BR"), status: "Pendente" }, ...current]);
-      setNotice("Comando salvo no Supabase. Ele ainda não foi executado pelo motor da extensão.");
-    } else {
-      setActivity((current) => [{ id: Date.now(), title: prompt.slice(0, 70), detail: "Prévia local · não salvo no banco", time: "Agora", status: "Demonstração" }, ...current]);
-      setNotice("Prévia local: comando exibido no histórico, mas não foi salvo no banco nem executado.");
+      setActivity((current) => [{ id: result.commitSha, title: result.summary, detail: `${result.repository} · ${result.files.join(", ")}`, time: new Date().toLocaleString("pt-BR"), status: "Concluído" }, ...current]);
+      setNotice(`Alteração gravada no GitHub: ${result.files.length} arquivo(s). Commit: ${result.commitUrl}${currentUserId && databaseStatus === "Supabase conectado" && !savedToDatabase ? " (o histórico não foi salvo no Supabase)" : savedToDatabase ? " · histórico salvo no Supabase" : ""}`);
+      window.sessionStorage.setItem("lovable-rp-web-repository", selectedRepository);
+      window.sessionStorage.setItem("lovable-rp-web-branch", selectedBranch);
+      setActiveNav("Histórico");
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Falha ao executar a alteração.";
+      setActivity((current) => [{ id: Date.now(), title: prompt.slice(0, 70), detail: message, time: new Date().toLocaleString("pt-BR"), status: "Erro" }, ...current]);
+      setNotice(`A execução não foi concluída: ${message}`);
+      setActiveNav("Histórico");
+    } finally {
+      setExecuting(false);
+      setExecutionProgress("");
+      setCommandText("");
     }
-    setCommandText("");
-    setActiveNav("Histórico");
   }
 
   const currentProject = projects[0] ?? { id: "demo", name: "new-page-maker", repository_full_name: "marao21/new-page-maker", branch: "main", status: "demo" };
