@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ComponentProps } from "react";
+import { supabase } from "../integrations/supabase/client";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   Activity,
@@ -43,11 +44,11 @@ export const Route = createFileRoute("/lovable-rp")({
 });
 
 type ActivityItem = {
-  id: number;
+  id: string | number;
   title: string;
   detail: string;
   time: string;
-  status: "Concluído" | "Demonstração";
+  status: "Concluído" | "Demonstração" | "Pendente" | "Erro";
 };
 
 const initialActivity: ActivityItem[] = [
@@ -67,6 +68,9 @@ const navItems = [
 
 function LovableRpDemo() {
   const [activeNav, setActiveNav] = useState("Visão geral");
+  const [databaseStatus, setDatabaseStatus] = useState("Prévia sem login");
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [projects, setProjects] = useState<Array<{ id: string; name: string; repository_full_name: string | null; branch: string; status: string }>>([]);
   const [commandText, setCommandText] = useState("");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchText, setSearchText] = useState("");
@@ -77,20 +81,78 @@ function LovableRpDemo() {
     [activity, searchText],
   );
 
-  function previewCommand() {
-    if (!commandText.trim()) {
+  useEffect(() => {
+    let active = true;
+    async function loadWorkspace() {
+      try {
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (!active) return;
+        if (sessionError || !sessionData.session?.user) {
+          setDatabaseStatus("Prévia sem login");
+          return;
+        }
+        const userId = sessionData.session.user.id;
+        const { data: profile, error: profileError } = await supabase
+          .from("lovable_rp_profiles")
+          .select("access_status")
+          .eq("id", userId)
+          .maybeSingle();
+        if (!active) return;
+        if (profileError || profile?.access_status !== "approved") {
+          setDatabaseStatus(profile?.access_status === "blocked" ? "Acesso bloqueado" : "Aguardando aprovação");
+          return;
+        }
+        setCurrentUserId(userId);
+        const [projectResult, commandResult] = await Promise.all([
+          supabase.from("lovable_rp_projects").select("id,name,repository_full_name,branch,status").eq("owner_id", userId).order("created_at", { ascending: false }),
+          supabase.from("lovable_rp_commands").select("id,prompt,status,created_at,project_id").eq("owner_id", userId).order("created_at", { ascending: false }).limit(10),
+        ]);
+        if (!active) return;
+        if (projectResult.error || commandResult.error) {
+          setDatabaseStatus("Schema pendente");
+          return;
+        }
+        setProjects(projectResult.data ?? []);
+        setActivity((commandResult.data ?? []).map((item) => ({
+          id: item.id,
+          title: item.prompt.slice(0, 70),
+          detail: item.status === "completed" ? "Comando concluído" : item.status === "failed" ? "Falha registrada" : "Salvo no Supabase · ainda sem execução automática",
+          time: new Date(item.created_at).toLocaleString("pt-BR"),
+          status: item.status === "completed" ? "Concluído" as const : item.status === "failed" ? "Erro" as const : "Pendente" as const,
+        })));
+        setDatabaseStatus("Supabase conectado");
+      } catch {
+        if (active) setDatabaseStatus("Supabase indisponível");
+      }
+    }
+    void loadWorkspace();
+    return () => { active = false; };
+  }, []);
+
+  async function previewCommand() {
+    const prompt = commandText.trim();
+    if (!prompt) {
       setNotice("Escreva um comando para visualizar como ele aparecerá na fila.");
       return;
     }
-    setActivity((current) => [
-      { id: Date.now(), title: commandText.trim().slice(0, 70), detail: "Prévia local · nenhuma alteração foi executada", time: "Agora", status: "Demonstração" },
-      ...current,
-    ]);
+    if (currentUserId && databaseStatus === "Supabase conectado") {
+      const { data, error } = await supabase.from("lovable_rp_commands").insert({ owner_id: currentUserId, prompt, status: "draft" }).select("id,prompt,status,created_at").single();
+      if (error || !data) {
+        setNotice("Não foi possível salvar no Supabase. Verifique a migração e as permissões; nenhum comando foi executado.");
+        return;
+      }
+      setActivity((current) => [{ id: data.id, title: data.prompt.slice(0, 70), detail: "Salvo no Supabase · aguardando executor", time: new Date(data.created_at).toLocaleString("pt-BR"), status: "Pendente" }, ...current]);
+      setNotice("Comando salvo no Supabase. Ele ainda não foi executado pelo motor da extensão.");
+    } else {
+      setActivity((current) => [{ id: Date.now(), title: prompt.slice(0, 70), detail: "Prévia local · não salvo no banco", time: "Agora", status: "Demonstração" }, ...current]);
+      setNotice("Prévia local: comando exibido no histórico, mas não foi salvo no banco nem executado.");
+    }
     setCommandText("");
     setActiveNav("Histórico");
-    setNotice("Comando adicionado à prévia. A execução real será conectada na próxima etapa.");
   }
 
+  const currentProject = projects[0] ?? { id: "demo", name: "new-page-maker", repository_full_name: "marao21/new-page-maker", branch: "main", status: "demo" };
+  const projectCount = databaseStatus === "Supabase conectado" ? projects.length : 1;
   const activeTitle = activeNav === "Visão geral" ? "Visão geral" : activeNav;
   const activeDescription =
     activeNav === "Comandos" ? "Escreva o que você quer alterar e prepare uma solicitação."
@@ -168,7 +230,7 @@ function LovableRpDemo() {
               <div><div className="flex items-center gap-2 text-xs text-slate-400"><span>Workspace</span><span>/</span><span className="text-slate-600">{activeTitle}</span></div><h1 className="mt-1 text-lg font-bold tracking-tight sm:text-xl">{activeTitle}</h1></div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="hidden items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 sm:flex"><span className="h-2 w-2 rounded-full bg-emerald-500" /> Interface pronta para prévia</div>
+              <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 sm:flex"><span className={`h-2 w-2 rounded-full ${databaseStatus === "Supabase conectado" ? "bg-emerald-500" : "bg-amber-500"}`} /> {databaseStatus}</div>
               <button onClick={() => setNotice("A central de notificações será conectada quando o backend estiver pronto.")} className="relative rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-slate-50" aria-label="Notificações"><Activity className="h-4 w-4" /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-pink-500" /></button>
               <button onClick={() => setNotice("Perfil e autenticação serão configurados depois da aprovação da interface.")} className="flex items-center gap-2 rounded-xl border border-slate-200 p-1.5 pr-2.5 hover:bg-slate-50"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-100 text-xs font-bold text-pink-700">MS</span><ChevronDown className="hidden h-4 w-4 text-slate-400 sm:block" /></button>
             </div>
@@ -199,8 +261,8 @@ function LovableRpDemo() {
 
             <section className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {[
-                { label: "Projetos conectados", value: "01", detail: "Projeto de demonstração", icon: FolderGit2, trend: "GitHub" },
-                { label: "Comandos registrados", value: String(activity.length).padStart(2, "0"), detail: "Inclui dados de exemplo", icon: Command, trend: "Prévia" },
+                { label: "Projetos conectados", value: String(projectCount).padStart(2, "0"), detail: databaseStatus === "Supabase conectado" ? "Dados do Supabase" : "Projeto ilustrativo", icon: FolderGit2, trend: databaseStatus === "Supabase conectado" ? "Supabase" : "Prévia" },
+                { label: "Comandos registrados", value: String(activity.length).padStart(2, "0"), detail: databaseStatus === "Supabase conectado" ? "Dados do banco" : "Histórico de demonstração", icon: Command, trend: databaseStatus === "Supabase conectado" ? "Banco" : "Prévia" },
                 { label: "Tarefas concluídas", value: "02", detail: "Histórico ilustrativo", icon: CheckCircle2, trend: "Demo" },
                 { label: "Tempo economizado", value: "—", detail: "Disponível após integração", icon: Clock3, trend: "Em breve" },
               ].map((stat) => {
@@ -221,7 +283,7 @@ function LovableRpDemo() {
               <div className="space-y-6">
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-100/60">
                   <div className="flex items-center justify-between"><div><h3 className="font-bold">Projeto conectado</h3><p className="mt-1 text-xs text-slate-500">Exemplo de cartão de projeto</p></div><button onClick={() => setActiveNav("Projetos")} aria-label="Ver projetos" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><MoreHorizontal className="h-5 w-5" /></button></div>
-                  <div className="mt-5 rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Github className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">new-page-maker</p><p className="text-xs text-slate-500">marao21 / main</p></div><span className="h-2 w-2 rounded-full bg-emerald-500" /></div><div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs"><span className="text-slate-500">Branch principal</span><code className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">main</code></div><p className="mt-3 text-[11px] leading-5 text-amber-700">Cartão ilustrativo baseado no projeto de trabalho; a conexão automática ainda será configurada.</p></div>
+                  <div className="mt-5 rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Github className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{currentProject.name}</p><p className="text-xs text-slate-500">{currentProject.repository_full_name ?? "Repositório não informado"}</p></div><span className="h-2 w-2 rounded-full bg-emerald-500" /></div><div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs"><span className="text-slate-500">Branch principal</span><code className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">{currentProject.branch}</code></div><p className="mt-3 text-[11px] leading-5 text-amber-700">{databaseStatus === "Supabase conectado" ? "Projeto carregado do banco; conexão OAuth com GitHub ainda precisa ser habilitada." : "Cartão de demonstração. Os dados reais aparecerão após conectar e configurar o Supabase."}</p></div>
                   <button onClick={() => { setActiveNav("Projetos"); setNotice("O seletor de projetos será conectado ao GitHub na próxima etapa."); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:border-pink-200 hover:bg-pink-50 hover:text-pink-700"><Plus className="h-4 w-4" /> Gerenciar projetos</button>
                 </div>
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-100/60">
@@ -239,6 +301,6 @@ function LovableRpDemo() {
   );
 }
 
-function DatabaseIcon(props: React.ComponentProps<"svg">) {
+function DatabaseIcon(props: ComponentProps<"svg">) {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true" {...props}><ellipse cx="12" cy="5" rx="8" ry="3" /><path d="M4 5v14c0 1.66 3.58 3 8 3s8-1.34 8-3V5" /><path d="M4 12c0 1.66 3.58 3 8 3s8-1.34 8-3" /></svg>;
 }
