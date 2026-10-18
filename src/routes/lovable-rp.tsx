@@ -86,6 +86,8 @@ function LovableRpDemo() {
   const [selectedRepository, setSelectedRepository] = useState("marao21/new-page-maker");
   const [selectedBranch, setSelectedBranch] = useState("main");
   const [connectingGithub, setConnectingGithub] = useState(false);
+  const [githubDeviceUserCode, setGithubDeviceUserCode] = useState("");
+  const [githubDeviceBusy, setGithubDeviceBusy] = useState(false);
   const [testingGemini, setTestingGemini] = useState(false);
   const [geminiConnected, setGeminiConnected] = useState(false);
   const [executing, setExecuting] = useState(false);
@@ -219,6 +221,38 @@ function LovableRpDemo() {
     const { error } = await supabase.auth.signOut();
     if (error) { setNotice("Não foi possível sair da sessão."); return; }
     window.location.reload();
+  }
+
+  async function handleStartGithubDeviceFlow() {
+    const clientId = (import.meta as any).env?.VITE_GITHUB_CLIENT_ID as string | undefined;
+    if (!clientId) { setNotice("Configure VITE_GITHUB_CLIENT_ID no ambiente do site e ative Device Flow no OAuth App do GitHub."); return; }
+    setGithubDeviceBusy(true); setGithubDeviceUserCode(""); setNotice("");
+    try {
+      const response = await fetch("https://github.com/login/device/code", { method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ client_id: clientId, scope: "repo read:user" }) });
+      const data = await response.json();
+      if (!response.ok || !data.device_code || !data.user_code) throw new Error(data.error_description || data.error || "O GitHub não iniciou a autorização. Confira o Client ID e o Device Flow.");
+      setGithubDeviceUserCode(data.user_code);
+      window.open(data.verification_uri || "https://github.com/login/device", "_blank", "noopener,noreferrer");
+      let interval = Math.max(Number(data.interval) || 5, 5) * 1000;
+      const expiresAt = Date.now() + Math.min(Number(data.expires_in) || 900, 900) * 1000;
+      while (Date.now() < expiresAt) {
+        await new Promise((resolve) => window.setTimeout(resolve, interval));
+        const tr = await fetch("https://github.com/login/oauth/access_token", { method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ client_id: clientId, device_code: data.device_code, grant_type: "urn:ietf:params:oauth:grant-type:device_code" }) });
+        const td = await tr.json();
+        if (td.access_token) {
+          const user = await validateGitHubToken(td.access_token); const repos = await listGitHubRepositories(td.access_token);
+          setGithubToken(td.access_token); setGithubUser(user.login); setRepoOptions(repos);
+          window.sessionStorage.setItem("lovable-rp-web-github-token", td.access_token); window.sessionStorage.setItem("lovable-rp-web-github-user", user.login);
+          if (!repos.some((repo) => repo.full_name === selectedRepository) && repos[0]) { setSelectedRepository(repos[0].full_name); setSelectedBranch(repos[0].default_branch); }
+          setGithubDeviceUserCode(""); setNotice("GitHub conectado como @" + user.login + ". " + repos.length + " repositórios encontrados."); return;
+        }
+        if (td.error === "authorization_pending") continue;
+        if (td.error === "slow_down") { interval += 5000; continue; }
+        throw new Error(td.error_description || td.error || "A autorização do GitHub não foi concluída.");
+      }
+      throw new Error("O código expirou. Clique em Conectar GitHub para gerar outro.");
+    } catch (error) { setNotice(error instanceof Error ? error.message : "Não foi possível conectar ao GitHub."); }
+    finally { setGithubDeviceBusy(false); }
   }
 
   async function handleConnectGithub() {
@@ -474,11 +508,10 @@ function LovableRpDemo() {
                     <div className="mt-5 grid gap-4 lg:grid-cols-2">
                       <div className="rounded-xl border border-slate-200 p-4">
                         <div className="flex items-center gap-2"><Github className="h-5 w-5" /><h4 className="text-sm font-bold">GitHub</h4>{githubUser && <span className="ml-auto rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Conectado</span>}</div>
-                        <label htmlFor="rp-github-token" className="mt-4 block text-xs font-semibold text-slate-600">Token de acesso pessoal</label>
-                        <input id="rp-github-token" type="password" autoComplete="off" value={githubToken} onChange={(event) => setGithubToken(event.target.value)} placeholder="github_pat_..." className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100" />
-                        <p className="mt-2 text-[11px] leading-5 text-slate-500">Use um token com acesso aos repositórios e permissão Contents: Read and write. A chave fica apenas nesta sessão do navegador.</p>
-                        <button onClick={handleConnectGithub} disabled={connectingGithub} className="mt-3 w-full rounded-xl bg-slate-900 px-3 py-2.5 text-xs font-bold text-white hover:bg-slate-700 disabled:opacity-60">{connectingGithub ? "Verificando acesso..." : "Validar GitHub e listar repositórios"}</button>
-                        {githubUser && <p className="mt-2 text-xs text-emerald-700">Autenticado como @{githubUser} · {repoOptions.length} repositórios encontrados</p>}
+                        <p className="mt-3 text-xs leading-5 text-slate-500">Conecte sua conta pela página oficial do GitHub. O código será gerado pelo GitHub e a conexão será verificada automaticamente.</p>
+                        <button onClick={handleStartGithubDeviceFlow} disabled={githubDeviceBusy} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 via-fuchsia-600 to-orange-400 px-4 py-3 text-sm font-bold text-white shadow-sm hover:brightness-105 disabled:opacity-60"><Github className="h-4 w-4" />{githubDeviceBusy ? "Aguardando autorização..." : githubUser ? "Reconectar GitHub" : "Conectar GitHub"}<ArrowRight className="h-4 w-4" /></button>
+                        {githubDeviceUserCode && <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-4"><p className="text-xs font-bold text-violet-950">Autorize no GitHub</p><p className="mt-1 text-xs text-violet-800">Use o código abaixo na página que foi aberta.</p><div className="mt-3 rounded-lg bg-violet-950 px-3 py-4 text-center font-mono text-2xl font-extrabold tracking-[0.2em] text-fuchsia-300">{githubDeviceUserCode}</div><button onClick={() => { void navigator.clipboard.writeText(githubDeviceUserCode); setNotice("Código de autorização copiado."); }} className="mt-2 w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs font-bold text-violet-950">Copiar código</button><p className="mt-2 text-center text-[11px] text-violet-800">Aguardando autorização… verificação automática</p></div>}
+                        {githubUser && <p className="mt-3 text-xs text-emerald-700">✓ Conectado como @{githubUser} · {repoOptions.length} repositórios encontrados</p>}
                       </div>
                       <div className="rounded-xl border border-slate-200 p-4">
                         <div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-pink-600" /><h4 className="text-sm font-bold">Gemini API</h4>{geminiApiKey && <span className="ml-auto rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Chave informada</span>}</div>
