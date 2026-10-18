@@ -502,7 +502,7 @@ function LovableRpDemo() {
                       <button onClick={() => void handleAuth()} disabled={authBusy} className="mt-3 rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-pink-700 disabled:opacity-60">{authBusy ? "Aguarde..." : authMode === "login" ? "Entrar com Supabase" : "Criar minha conta"}</button>
                       {signedInEmail && <button onClick={() => void handleSignOut()} className="ml-3 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold hover:bg-slate-50">Sair</button>}
                     </div>
-                    <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Status do banco: {databaseStatus}. O projeto Supabase vinculado está inativo; autenticação, histórico e aprovação só funcionarão após reativar o projeto e aplicar a migração. O site não reutiliza automaticamente a sessão da extensão ChatGPT.</p>
+                    <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Status do banco: {databaseStatus}. {databaseStatus === "Supabase conectado" ? "Autenticação e persistência estão respondendo; confirme que a migração Lovable RP está aplicada para habilitar todas as tabelas." : "Autenticação, aprovação e histórico persistente dependem de um Supabase ativo, variáveis de ambiente corretas e da migração SQL aplicada."} O site não reutiliza automaticamente a sessão da extensão ChatGPT.</p>
                   </div>
                 )}
                 {activeNav === "Usuários" && (
