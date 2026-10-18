@@ -70,6 +70,11 @@ export async function listGitHubRepositories(token: string): Promise<GitHubRepoO
   }));
 }
 
+function containsLikelySecret(content: string) {
+  return /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|(?:ghp_|github_pat_|AIza[0-9A-Za-z_-]{20,}|sk-[A-Za-z0-9]{20,}|sb_secret_[A-Za-z0-9_]+)/.test(content)
+    || /(?:api[_-]?key|access[_-]?token|client[_-]?secret|service[_-]?role[_-]?key|password)\s*[:=]\s*["'][^"']{12,}["']/i.test(content);
+}
+
 function decodeBase64Utf8(value: string) {
   const binary = atob(value.replace(/\s/g, ""));
   const bytes = Uint8Array.from(binary, (character) => character.charCodeAt(0));
@@ -198,7 +203,7 @@ export async function executeGitHubEdit(args: {
       const file = await githubRequest<any>(token, `/repos/${repo}/contents/${path.split("/").map(encodeURIComponent).join("/")}?ref=${encodeURIComponent(headSha)}`);
       if (file?.encoding !== "base64" || typeof file.content !== "string") continue;
       const content = decodeBase64Utf8(file.content);
-      if (content.length <= MAX_FILE_CHARS) selectedFiles.push({ path, content });
+      if (content.length <= MAX_FILE_CHARS && !containsLikelySecret(content)) selectedFiles.push({ path, content });
     } catch {
       // Ignore a file that changed or could not be read; other context may still be sufficient.
     }
