@@ -426,7 +426,7 @@ function LovableRpDemo() {
                         <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Github className="h-5 w-5" /></div>
                         <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{project.name}</p><p className="truncate text-xs text-slate-500">{project.repository_full_name ?? "Repositório não informado"}</p></div>
                         <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">Branch: {project.branch}</span>
-                        <button onClick={() => setNotice("O projeto foi selecionado apenas nesta prévia. A execução pelo GitHub ainda precisa ser integrada.")} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold hover:bg-slate-50">Selecionar</button>
+                        <button onClick={() => { if (project.repository_full_name) { setSelectedRepository(project.repository_full_name); setSelectedBranch(project.branch || "main"); window.sessionStorage.setItem("lovable-rp-web-repository", project.repository_full_name); window.sessionStorage.setItem("lovable-rp-web-branch", project.branch || "main"); setNotice("Repositório selecionado para a próxima execução."); } else { setNotice("Conecte o GitHub e selecione um repositório."); setActiveNav("Conexões"); } }} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold hover:bg-slate-50">Selecionar</button>
                       </div>
                     ))}
                     {databaseStatus === "Supabase conectado" && projects.length === 0 && <p className="py-6 text-center text-sm text-slate-400">Nenhum projeto salvo no banco ainda.</p>}
