@@ -291,6 +291,29 @@ function LovableRpDemo() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Falha ao executar a alteração.";
       setActivity((current) => [{ id: Date.now(), title: prompt.slice(0, 70), detail: message, time: new Date().toLocaleString("pt-BR"), status: "Erro" }, ...current]);
+      if (currentUserId && databaseStatus === "Supabase conectado") {
+        try {
+          const projectId = projects.find((project) => project.repository_full_name === selectedRepository)?.id ?? null;
+          const { data: failedCommand, error: saveError } = await rpDb.from("lovable_rp_commands").insert({
+            owner_id: currentUserId,
+            project_id: projectId,
+            prompt,
+            status: "failed",
+            error_message: message,
+          }).select("id").single();
+          if (!saveError && failedCommand) {
+            await rpDb.from("lovable_rp_activity").insert({
+              owner_id: currentUserId,
+              project_id: projectId,
+              command_id: failedCommand.id,
+              event_type: "command.failed",
+              message: message.slice(0, 1000),
+            });
+          }
+        } catch {
+          // A falha original continua visível no painel mesmo se o histórico estiver indisponível.
+        }
+      }
       setNotice(`A execução não foi concluída: ${message}`);
       setActiveNav("Histórico");
     } finally {
