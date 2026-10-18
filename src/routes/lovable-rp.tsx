@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { supabase } from "../integrations/supabase/client";
+import { isSupabaseConfigured, supabase } from "../integrations/supabase/client";
 import { executeGitHubEdit, listGitHubRepositories, validateGeminiApiKey, validateGitHubToken, type GitHubRepoOption } from "../lib/lovable-rp-engine";
 import {
   Activity,
@@ -52,14 +52,10 @@ type ActivityItem = {
   title: string;
   detail: string;
   time: string;
-  status: "Concluído" | "Demonstração" | "Pendente" | "Erro";
+  status: "Concluído" | "Pendente" | "Erro";
 };
 
-const initialActivity: ActivityItem[] = [
-  { id: 1, title: "Atualizar cores da página", detail: "new-page-maker · src/styles.css", time: "Há 18 min", status: "Concluído" },
-  { id: 2, title: "Revisar botão de chamada", detail: "new-page-maker · src/routes/index.tsx", time: "Há 42 min", status: "Concluído" },
-  { id: 3, title: "Preparar estrutura do painel", detail: "Lovable RP Web · interface", time: "Agora", status: "Demonstração" },
-];
+const initialActivity: ActivityItem[] = [];
 
 const navItems = [
   { label: "Visão geral", icon: LayoutDashboard },
@@ -72,7 +68,7 @@ const navItems = [
 
 function LovableRpDemo() {
   const [activeNav, setActiveNav] = useState("Visão geral");
-  const [databaseStatus, setDatabaseStatus] = useState("Prévia sem login");
+  const [databaseStatus, setDatabaseStatus] = useState("Verificando Supabase");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Array<{ id: string; name: string; repository_full_name: string | null; branch: string; status: string }>>([]);
   const [adminUsers, setAdminUsers] = useState<Array<{id:string;email:string|null;full_name:string|null;role:string;access_status:string}>>([]);
@@ -117,6 +113,13 @@ function LovableRpDemo() {
     let active = true;
     async function loadWorkspace() {
       try {
+        if (!isSupabaseConfigured()) {
+          if (active) {
+            setDatabaseStatus("Configuração necessária");
+            setNotice("O Supabase ainda não está configurado neste ambiente. Defina VITE_SUPABASE_URL e VITE_SUPABASE_PUBLISHABLE_KEY para ativar login, aprovação e histórico persistente.");
+          }
+          return;
+        }
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (!active) return;
         if (sessionError || !sessionData.session?.user) {
@@ -323,15 +326,16 @@ function LovableRpDemo() {
     }
   }
 
-  const currentProject = projects[0] ?? { id: "demo", name: "new-page-maker", repository_full_name: "marao21/new-page-maker", branch: "main", status: "demo" };
-  const projectCount = databaseStatus === "Supabase conectado" ? projects.length : 1;
+  const selectedRepoOption = repoOptions.find((repo) => repo.full_name === selectedRepository);
+  const currentProject = projects[0] ?? (selectedRepoOption ? { id: "github", name: selectedRepoOption.name, repository_full_name: selectedRepoOption.full_name, branch: selectedBranch || selectedRepoOption.default_branch, status: "active" } : { id: "empty", name: "Nenhum projeto conectado", repository_full_name: null, branch: "—", status: "empty" });
+  const projectCount = databaseStatus === "Supabase conectado" ? projects.length : repoOptions.length ? 1 : 0;
   const activeTitle = activeNav === "Visão geral" ? "Visão geral" : activeNav;
   const activeDescription =
     activeNav === "Comandos" ? "Escreva o que você quer alterar e prepare uma solicitação."
     : activeNav === "Projetos" ? "Organize os repositórios que você utiliza nos seus trabalhos."
     : activeNav === "Histórico" ? "Acompanhe solicitações recentes e seus resultados."
     : activeNav === "Conexões" ? "Veja o estado das integrações que serão conectadas ao sistema."
-    : activeNav === "Usuários" ? "Prévia do controle de acesso que será ativado posteriormente."
+    : activeNav === "Usuários" ? (isAdmin ? "Aprove, bloqueie ou reative contas registradas no Supabase." : "A gestão de usuários exige uma conta administradora aprovada.")
     : "Seu centro de comando para projetos, solicitações e automações.";
 
   return (
@@ -377,8 +381,8 @@ function LovableRpDemo() {
               );
             })}
             <p className="px-3 pb-2 pt-7 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">Preferências</p>
-            <button onClick={() => setNotice("As configurações serão habilitadas na próxima etapa.")} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"><Settings2 className="h-[18px] w-[18px]" /> Configurações</button>
-            <button onClick={() => setNotice("A central de ajuda será adicionada à versão funcional.")} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"><CircleHelp className="h-[18px] w-[18px]" /> Ajuda</button>
+            <button onClick={() => { setActiveNav("Conexões"); setNotice("Gerencie as conexões de GitHub, Gemini e Supabase nesta área."); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"><Settings2 className="h-[18px] w-[18px]" /> Configurações</button>
+            <button onClick={() => setNotice("Ajuda: conecte GitHub e Gemini na aba Conexões. Para usar login e histórico, o Supabase precisa estar ativo e receber a migração SQL do repositório.")} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100"><CircleHelp className="h-[18px] w-[18px]" /> Ajuda</button>
           </nav>
 
           <div className="m-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
@@ -389,7 +393,7 @@ function LovableRpDemo() {
           <div className="border-t border-slate-100 p-4">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-slate-900 text-xs font-bold text-white">MS</div>
-              <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">Administrador</p><p className="text-xs text-slate-500">Prévia local</p></div>
+              <div className="min-w-0 flex-1"><p className="truncate text-sm font-semibold">{isAdmin ? "Administrador" : "Workspace"}</p><p className="truncate text-xs text-slate-500">{signedInEmail || "Sessão não autenticada"}</p></div>
               <MoreHorizontal className="h-5 w-5 text-slate-400" />
             </div>
           </div>
@@ -403,7 +407,7 @@ function LovableRpDemo() {
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 sm:flex"><span className={`h-2 w-2 rounded-full ${databaseStatus === "Supabase conectado" ? "bg-emerald-500" : "bg-amber-500"}`} /> {databaseStatus}</div>
-              <button onClick={() => setNotice("A central de notificações será conectada quando o backend estiver pronto.")} className="relative rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-slate-50" aria-label="Notificações"><Activity className="h-4 w-4" /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-pink-500" /></button>
+              <button onClick={() => setNotice("As notificações em tempo real ainda não estão habilitadas. O histórico de comandos aparece na aba Histórico.")} className="rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-slate-50" aria-label="Estado das notificações"><Activity className="h-4 w-4" /></button>
               {signedInEmail ? <button onClick={handleSignOut} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold hover:bg-slate-50" title={signedInEmail}>Sair · {signedInEmail}</button> : <button onClick={() => { setActiveNav("Conexões"); setNotice("Entre ou crie uma conta na área de acesso abaixo."); }} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold hover:bg-slate-50">Entrar</button>}
             </div>
           </header>
@@ -513,8 +517,8 @@ function LovableRpDemo() {
 
             <section hidden={activeNav !== "Visão geral"} className="mb-7 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {[
-                { label: "Projetos conectados", value: String(projectCount).padStart(2, "0"), detail: databaseStatus === "Supabase conectado" ? "Dados do Supabase" : "Projeto ilustrativo", icon: FolderGit2, trend: databaseStatus === "Supabase conectado" ? "Supabase" : "Prévia" },
-                { label: "Comandos registrados", value: String(activity.length).padStart(2, "0"), detail: databaseStatus === "Supabase conectado" ? "Dados do banco" : "Histórico de demonstração", icon: Command, trend: databaseStatus === "Supabase conectado" ? "Banco" : "Prévia" },
+                { label: "Projetos conectados", value: String(projectCount).padStart(2, "0"), detail: databaseStatus === "Supabase conectado" ? "Dados do Supabase" : repoOptions.length ? "Repositório GitHub selecionado" : "Nenhum repositório verificado", icon: FolderGit2, trend: databaseStatus === "Supabase conectado" ? "Supabase" : repoOptions.length ? "GitHub" : "Aguardando conexão" }, 
+                { label: "Comandos registrados", value: String(activity.length).padStart(2, "0"), detail: databaseStatus === "Supabase conectado" ? "Histórico do banco" : "Atividade desta sessão", icon: Command, trend: databaseStatus === "Supabase conectado" ? "Banco" : "Sessão" }, 
                 { label: "Tarefas concluídas", value: "02", detail: "Histórico ilustrativo", icon: CheckCircle2, trend: "Demo" },
                 { label: "Tempo economizado", value: "—", detail: "Disponível após integração", icon: Clock3, trend: "Em breve" },
               ].map((stat) => {
@@ -534,13 +538,13 @@ function LovableRpDemo() {
 
               <div className="space-y-6">
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-100/60">
-                  <div className="flex items-center justify-between"><div><h3 className="font-bold">Projeto conectado</h3><p className="mt-1 text-xs text-slate-500">Exemplo de cartão de projeto</p></div><button onClick={() => setActiveNav("Projetos")} aria-label="Ver projetos" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><MoreHorizontal className="h-5 w-5" /></button></div>
-                  <div className="mt-5 rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Github className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{currentProject.name}</p><p className="text-xs text-slate-500">{currentProject.repository_full_name ?? "Repositório não informado"}</p></div><span className="h-2 w-2 rounded-full bg-emerald-500" /></div><div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs"><span className="text-slate-500">Branch principal</span><code className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">{currentProject.branch}</code></div><p className="mt-3 text-[11px] leading-5 text-amber-700">{databaseStatus === "Supabase conectado" ? "Projeto carregado do banco; conexão OAuth com GitHub ainda precisa ser habilitada." : "Cartão de demonstração. Os dados reais aparecerão após conectar e configurar o Supabase."}</p></div>
-                  <button onClick={() => { setActiveNav("Projetos"); setNotice("O seletor de projetos será conectado ao GitHub na próxima etapa."); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:border-pink-200 hover:bg-pink-50 hover:text-pink-700"><Plus className="h-4 w-4" /> Gerenciar projetos</button>
+                  <div className="flex items-center justify-between"><div><h3 className="font-bold">Projeto conectado</h3><p className="mt-1 text-xs text-slate-500">Estado real da conexão</p></div><button onClick={() => setActiveNav("Projetos")} aria-label="Ver projetos" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><MoreHorizontal className="h-5 w-5" /></button></div>
+                  <div className="mt-5 rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Github className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{currentProject.name}</p><p className="text-xs text-slate-500">{currentProject.repository_full_name ?? "Repositório não informado"}</p></div><span className="h-2 w-2 rounded-full bg-emerald-500" /></div><div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs"><span className="text-slate-500">Branch principal</span><code className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">{currentProject.branch}</code></div><p className="mt-3 text-[11px] leading-5 text-amber-700">{databaseStatus === "Supabase conectado" ? "Projeto carregado do Supabase. As alterações de código são confirmadas pelo link de commit do GitHub." : selectedRepoOption ? "Repositório carregado do GitHub; o cadastro persistente de projetos depende do Supabase ativo." : "Nenhum repositório confirmado. Conecte o GitHub na aba Conexões para carregar seus projetos reais."}</p></div>
+                  <button onClick={() => { setActiveNav("Projetos"); setNotice(repoOptions.length ? "Selecione o repositório e a branch na aba Conexões." : "Conecte o GitHub para carregar repositórios e branches reais."); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:border-pink-200 hover:bg-pink-50 hover:text-pink-700"><Plus className="h-4 w-4" /> Gerenciar projetos</button>
                 </div>
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-100/60">
                   <div className="flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><Gauge className="h-4 w-4" /></div><div><h3 className="text-sm font-bold">Status das integrações</h3><p className="text-xs text-slate-500">Conexões para configurar</p></div></div>
-                  <div className="mt-4 space-y-3">{[{name:"GitHub",detail:"Repositórios e commits",icon:Github},{name:"ChatGPT",detail:"Fluxo de execução",icon:Bot},{name:"Supabase",detail:"Dados e permissões",icon:DatabaseIcon}].map((connection) => { const Icon = connection.icon; return <div key={connection.name} className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-600"><Icon className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="text-xs font-semibold">{connection.name}</p><p className="text-[10px] text-slate-400">{connection.detail}</p></div><span className="rounded-full bg-slate-100 px-2 py-1 text-[10px] font-semibold text-slate-500">Pendente</span></div>; })}</div>
+                  <div className="mt-4 space-y-3">{[{name:"GitHub",detail:"Repositórios e commits",icon:Github,connected:!!githubUser},{name:"Gemini",detail:"IA para analisar e editar arquivos",icon:Bot,connected:geminiConnected},{name:"Supabase",detail:"Dados e permissões",icon:DatabaseIcon,connected:databaseStatus === "Supabase conectado"}].map((connection) => { const Icon = connection.icon; return <div key={connection.name} className="flex items-center gap-3"><div className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-50 text-slate-600"><Icon className="h-4 w-4" /></div><div className="min-w-0 flex-1"><p className="text-xs font-semibold">{connection.name}</p><p className="text-[10px] text-slate-400">{connection.detail}</p></div><span className={`rounded-full px-2 py-1 text-[10px] font-semibold ${connection.connected ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{connection.connected ? "Conectado" : "Pendente"}</span></div>; })}</div>
                   <button onClick={() => setActiveNav("Conexões")} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-slate-50 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:bg-slate-100">Ver integrações <ArrowRight className="h-3.5 w-3.5" /></button>
                 </div>
               </div>
