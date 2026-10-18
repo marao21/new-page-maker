@@ -2,18 +2,18 @@
 @import "tw-animate-css";
 
 :root {
-  --background: #f8fafc; /* Slate-50 suave */
+  --background: #fff7fb; /* Rosa muito suave */
   --surface: #ffffff;
   --foreground: #0f172a; /* Slate-900 alto contraste */
   --muted: #64748b; /* Slate-500 */
   --muted-light: #f1f5f9; /* Slate-100 */
-  --border: #e2e8f0; /* Slate-200 */
-  --primary: #7c3aed; /* Violet-600 */
-  --primary-hover: #6d28d9; /* Violet-700 */
-  --primary-light: #f5f3ff; /* Violet-50 */
+  --border: #f3d5e4; /* Rosa claro */
+  --primary: #db2777; /* Pink-600 */
+  --primary-hover: #be185d; /* Pink-700 */
+  --primary-light: #fdf2f8; /* Pink-50 */
   --primary-foreground: #ffffff;
-  --accent: #10b981; /* Emerald-500 para garantias e checkmarks */
-  --accent-light: #ecfdf5;
+  --accent: #ec4899; /* Pink-500 */
+  --accent-light: #fce7f3;
   --card: #ffffff;
   --popover: #ffffff;
   --destructive: #ef4444;
