@@ -30,6 +30,14 @@ const materials = [
     href: "/guia-de-foco-plano-pratico.pdf",
   },
   {
+    title: "Checklist de Rotina e Foco",
+    description: "PDF imprimível com passos simples para planejar o dia, proteger o foco e encerrar a rotina.",
+    detail: "PDF • Checklist prático",
+    icon: BookOpen,
+    tone: "bg-rose-100 text-rose-700",
+    href: "/checklist-rotina-foco.pdf",
+  },
+  {
     title: "Dashboard do Notion",
     description: "Organize tarefas e acompanhe sua evolução em um só lugar.",
     detail: "Modelo para duplicar",
@@ -51,7 +59,7 @@ function MembersArea() {
   const [checking, setChecking] = useState(true);
   const [loggingOut, setLoggingOut] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [guideOpen, setGuideOpen] = useState(false);
+  const [openPdf, setOpenPdf] = useState<null | { title: string; href: string }>(null);
 
   useEffect(() => {
     let active = true;
@@ -127,20 +135,20 @@ function MembersArea() {
         </div>
       </aside>
 
-      {guideOpen && (
-        <div className="fixed inset-0 z-50 flex flex-col bg-slate-950/80 p-2 sm:p-6" role="dialog" aria-modal="true" aria-label="Leitor do Guia de Foco">
+      {openPdf && (
+        <div className="fixed inset-0 z-50 flex flex-col bg-slate-950/80 p-2 sm:p-6" role="dialog" aria-modal="true" aria-label={`Leitor de ${openPdf.title}`}>
           <div className="mx-auto flex w-full max-w-6xl flex-1 flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
             <div className="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 sm:px-6">
               <div>
-                <h2 className="font-extrabold text-slate-900">Guia de Foco — Plano prático de 7 dias</h2>
+                <h2 className="font-extrabold text-slate-900">{openPdf.title}</h2>
                 <p className="text-xs text-slate-500">Leitura do PDF dentro da área de membros</p>
               </div>
               <div className="flex items-center gap-2">
-                <a href="/guia-de-foco-plano-pratico.pdf" target="_blank" rel="noreferrer" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Abrir em nova aba</a>
-                <button type="button" onClick={() => setGuideOpen(false)} className="rounded-lg bg-pink-600 px-3 py-2 text-sm font-bold text-white hover:bg-pink-700" aria-label="Fechar leitor">Fechar</button>
+                <a href={openPdf.href} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">Abrir em nova aba</a>
+                <button type="button" onClick={() => setOpenPdf(null)} className="rounded-lg bg-pink-600 px-3 py-2 text-sm font-bold text-white hover:bg-pink-700" aria-label="Fechar leitor">Fechar</button>
               </div>
             </div>
-            <iframe src="/guia-de-foco-plano-pratico.pdf#toolbar=1&navpanes=0" title="Guia de Foco — Plano prático de 7 dias" className="min-h-0 w-full flex-1 bg-slate-100" />
+            <iframe src={`${openPdf.href}#toolbar=1&navpanes=0`} title={openPdf.title} className="min-h-0 w-full flex-1 bg-slate-100" />
           </div>
         </div>
       )}
@@ -217,7 +225,7 @@ function MembersArea() {
                     <p className="mt-2 min-h-12 text-sm leading-6 text-slate-500">{material.description}</p>
                     <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-500"><Download className="h-4 w-4" /> {material.detail}</div>
                     {material.href ? (
-                      <button type="button" onClick={() => setGuideOpen(true)} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
+                      <button type="button" onClick={() => setOpenPdf({ title: material.title, href: material.href! })} className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
                         <BookOpen className="h-4 w-4" /> Abrir PDF no sistema
                       </button>
                     ) : (
