@@ -22,11 +22,12 @@ export const Route = createFileRoute("/membros")({
 
 const materials = [
   {
-    title: "E-book interativo",
-    description: "Seu guia prático para organizar a rotina e manter o foco.",
-    detail: "PDF • 64 páginas",
+    title: "Guia de Foco — Plano prático de 7 dias",
+    description: "Um material prático para escolher prioridades, reduzir distrações e criar uma rotina de foco.",
+    detail: "PDF • 5 páginas",
     icon: BookOpen,
     tone: "bg-pink-100 text-pink-700",
+    href: "/guia-de-foco-plano-pratico.pdf",
   },
   {
     title: "Dashboard do Notion",
@@ -196,7 +197,13 @@ function MembersArea() {
                     <h3 className="mt-5 text-lg font-extrabold">{material.title}</h3>
                     <p className="mt-2 min-h-12 text-sm leading-6 text-slate-500">{material.description}</p>
                     <div className="mt-4 flex items-center gap-2 text-xs font-semibold text-slate-500"><Download className="h-4 w-4" /> {material.detail}</div>
-                    <div className="mt-5 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-500">Material anunciado na página do produto. O link do arquivo precisa ser configurado para liberar o acesso.</div>
+                    {material.href ? (
+                      <a href={material.href} download className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-pink-600 px-4 py-3 text-sm font-bold text-white transition hover:bg-pink-700 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:ring-offset-2">
+                        <Download className="h-4 w-4" /> Baixar PDF
+                      </a>
+                    ) : (
+                      <div className="mt-5 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-3 py-3 text-xs leading-5 text-slate-500">Material anunciado na página do produto. O link do arquivo precisa ser configurado para liberar o acesso.</div>
+                    )}
                   </article>
                 );
               })}
