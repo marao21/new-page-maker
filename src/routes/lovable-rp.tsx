@@ -226,35 +226,69 @@ function LovableRpDemo() {
 
   async function handleStartGithubDeviceFlow() {
     const clientId = githubClientId.trim();
-    if (!clientId) { setNotice("Informe o Client ID público do OAuth App Lovable RP com Device Flow ativado."); return; }
+    if (!clientId) { setNotice("Informe o Client ID público do OAuth App do GitHub com Device Flow ativado."); return; }
     window.sessionStorage.setItem("lovable-rp-web-github-client-id", clientId);
     setGithubDeviceBusy(true); setGithubDeviceUserCode(""); setNotice("");
+    // Open synchronously from the click so the browser does not block the GitHub authorization tab.
+    const authWindow = window.open("about:blank", "_blank");
     try {
-      const response = await fetch("https://github.com/login/device/code", { method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ client_id: clientId, scope: "repo read:user" }) });
+      if (authWindow) {
+        authWindow.document.title = "Conectando ao GitHub";
+        authWindow.document.body.innerHTML = "<p style='font-family:system-ui;padding:24px'>Solicitando código seguro ao GitHub…</p>";
+      }
+      const requestBody = new URLSearchParams({ client_id: clientId, scope: "repo read:user" });
+      const response = await fetch("https://github.com/login/device/code", {
+        method: "POST",
+        headers: { "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded" },
+        body: requestBody.toString(),
+      });
       const data = await response.json();
-      if (!response.ok || !data.device_code || !data.user_code) throw new Error(data.error_description || data.error || "O GitHub não iniciou a autorização. Confira o Client ID e o Device Flow.");
+      if (!response.ok || !data.device_code || !data.user_code) throw new Error(data.error_description || data.error || "O GitHub não iniciou a autorização. Confira o Client ID e se Device Flow está ativado.");
       setGithubDeviceUserCode(data.user_code);
-      window.open(data.verification_uri || "https://github.com/login/device", "_blank", "noopener,noreferrer");
+      const verificationUri = data.verification_uri || "https://github.com/login/device";
+      if (authWindow && !authWindow.closed) authWindow.location.href = verificationUri;
+      else window.location.href = verificationUri;
       let interval = Math.max(Number(data.interval) || 5, 5) * 1000;
       const expiresAt = Date.now() + Math.min(Number(data.expires_in) || 900, 900) * 1000;
       while (Date.now() < expiresAt) {
         await new Promise((resolve) => window.setTimeout(resolve, interval));
-        const tr = await fetch("https://github.com/login/oauth/access_token", { method: "POST", headers: { "Accept": "application/json", "Content-Type": "application/json" }, body: JSON.stringify({ client_id: clientId, device_code: data.device_code, grant_type: "urn:ietf:params:oauth:grant-type:device_code" }) });
-        const td = await tr.json();
-        if (td.access_token) {
-          const user = await validateGitHubToken(td.access_token); const repos = await listGitHubRepositories(td.access_token);
-          setGithubToken(td.access_token); setGithubUser(user.login); setRepoOptions(repos);
-          window.sessionStorage.setItem("lovable-rp-web-github-token", td.access_token); window.sessionStorage.setItem("lovable-rp-web-github-user", user.login);
-          if (!repos.some((repo) => repo.full_name === selectedRepository) && repos[0]) { setSelectedRepository(repos[0].full_name); setSelectedBranch(repos[0].default_branch); }
-          setGithubDeviceUserCode(""); setNotice("GitHub conectado como @" + user.login + ". " + repos.length + " repositórios encontrados."); return;
+        const tokenBody = new URLSearchParams({
+          client_id: clientId,
+          device_code: data.device_code,
+          grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+        });
+        const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
+          method: "POST",
+          headers: { "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded" },
+          body: tokenBody.toString(),
+        });
+        const tokenData = await tokenResponse.json();
+        if (tokenData.access_token) {
+          const user = await validateGitHubToken(tokenData.access_token);
+          const repos = await listGitHubRepositories(tokenData.access_token);
+          setGithubToken(tokenData.access_token); setGithubUser(user.login); setRepoOptions(repos);
+          window.sessionStorage.setItem("lovable-rp-web-github-token", tokenData.access_token);
+          window.sessionStorage.setItem("lovable-rp-web-github-user", user.login);
+          if (!repos.some((repo) => repo.full_name === selectedRepository) && repos[0]) {
+            setSelectedRepository(repos[0].full_name); setSelectedBranch(repos[0].default_branch);
+          }
+          setGithubDeviceUserCode(""); setNotice("GitHub conectado como @" + user.login + ". " + repos.length + " repositórios encontrados.");
+          if (authWindow && !authWindow.closed) authWindow.close();
+          return;
         }
-        if (td.error === "authorization_pending") continue;
-        if (td.error === "slow_down") { interval += 5000; continue; }
-        throw new Error(td.error_description || td.error || "A autorização do GitHub não foi concluída.");
+        if (tokenData.error === "authorization_pending") continue;
+        if (tokenData.error === "slow_down") { interval += 5000; continue; }
+        if (tokenData.error === "device_flow_disabled") throw new Error("Device Flow está desativado nas configurações do OAuth App do GitHub.");
+        if (tokenData.error === "incorrect_client_credentials") throw new Error("O Client ID não é válido para este fluxo.");
+        if (tokenData.error === "access_denied") throw new Error("A autorização foi cancelada no GitHub.");
+        if (tokenData.error === "expired_token" || tokenData.error === "token_expired") throw new Error("O código expirou. Clique em Conectar GitHub para gerar outro.");
+        throw new Error(tokenData.error_description || tokenData.error || "A autorização do GitHub não foi concluída.");
       }
       throw new Error("O código expirou. Clique em Conectar GitHub para gerar outro.");
-    } catch (error) { setNotice(error instanceof Error ? error.message : "Não foi possível conectar ao GitHub."); }
-    finally { setGithubDeviceBusy(false); }
+    } catch (error) {
+      if (authWindow && !authWindow.closed) authWindow.close();
+      setNotice(error instanceof Error ? error.message : "Não foi possível conectar ao GitHub. Confira o Client ID e as configurações do aplicativo.");
+    } finally { setGithubDeviceBusy(false); }
   }
 
   async function handleConnectGithub() {
