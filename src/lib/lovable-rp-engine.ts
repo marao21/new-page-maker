@@ -266,6 +266,10 @@ export async function executeGitHubEdit(args: {
     method: "PATCH",
     body: JSON.stringify({ sha: commit.sha, force: false }),
   });
+  const verifiedBranch = await githubRequest<any>(token, `/repos/${repo}/branches/${encodeURIComponent(branch)}`);
+  if (verifiedBranch?.commit?.sha !== commit.sha) {
+    throw new Error("O GitHub aceitou a atualização, mas a verificação final da branch não confirmou o commit. Confira o histórico do repositório antes de repetir o comando.");
+  }
   return {
     summary: String(generated.summary || "Alterações aplicadas."),
     commitSha: String(commit.sha),
