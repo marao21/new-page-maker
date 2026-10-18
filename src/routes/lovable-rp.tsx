@@ -75,7 +75,13 @@ function LovableRpDemo() {
   const [databaseStatus, setDatabaseStatus] = useState("Prévia sem login");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Array<{ id: string; name: string; repository_full_name: string | null; branch: string; status: string }>>([]);
-  const [demoUsers, setDemoUsers] = useState([{ id: 1, name: "Ana Costa", email: "ana@exemplo.com", status: "Aguardando aprovação" }, { id: 2, name: "Carlos Lima", email: "carlos@exemplo.com", status: "Aprovado" }, { id: 3, name: "Paula Souza", email: "paula@exemplo.com", status: "Bloqueado" }]);
+  const [adminUsers, setAdminUsers] = useState<Array<{id:string;email:string|null;full_name:string|null;role:string;access_status:string}>>([]);
+  const [authEmail, setAuthEmail] = useState("");
+  const [authPassword, setAuthPassword] = useState("");
+  const [authMode, setAuthMode] = useState<"login"|"signup">("login");
+  const [authBusy, setAuthBusy] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [signedInEmail, setSignedInEmail] = useState<string|null>(null);
   const [commandText, setCommandText] = useState("");
   const [githubToken, setGithubToken] = useState("");
   const [geminiApiKey, setGeminiApiKey] = useState("");
@@ -114,20 +120,36 @@ function LovableRpDemo() {
         const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
         if (!active) return;
         if (sessionError || !sessionData.session?.user) {
-          setDatabaseStatus("Prévia sem login");
+          setCurrentUserId(null);
+          setSignedInEmail(null);
+          setDatabaseStatus("Sem sessão");
           return;
         }
         const userId = sessionData.session.user.id;
+        setSignedInEmail(sessionData.session.user.email ?? null);
         const { data: profile, error: profileError } = await rpDb
           .from("lovable_rp_profiles")
-          .select("access_status")
+          .select("access_status,role,email,full_name")
           .eq("id", userId)
           .maybeSingle();
         if (!active) return;
-        if (profileError || profile?.access_status !== "approved") {
-          setDatabaseStatus(profile?.access_status === "blocked" ? "Acesso bloqueado" : "Aguardando aprovação");
+        if (profileError) {
+          setDatabaseStatus("Schema pendente");
+          setNotice("Não consegui ler seu perfil no Supabase. Confira se o banco está ativo e se a migração Lovable RP foi aplicada.");
           return;
         }
+        if (!profile) {
+          setDatabaseStatus("Perfil não criado");
+          setNotice("Sua conta existe, mas o perfil Lovable RP não foi criado. Aplique a migração no Supabase.");
+          return;
+        }
+        if (profile.access_status !== "approved") {
+          setDatabaseStatus(profile.access_status === "blocked" ? "Acesso bloqueado" : "Aguardando aprovação");
+          setCurrentUserId(userId);
+          setIsAdmin(false);
+          return;
+        }
+        setIsAdmin(profile.role === "admin");
         setCurrentUserId(userId);
         const [projectResult, commandResult] = await Promise.all([
           rpDb.from("lovable_rp_projects").select("id,name,repository_full_name,branch,status").eq("owner_id", userId).order("created_at", { ascending: false }),
@@ -139,6 +161,10 @@ function LovableRpDemo() {
           return;
         }
         setProjects(projectResult.data ?? []);
+        if (profile.role === "admin") {
+          const { data: users, error: usersError } = await rpDb.from("lovable_rp_profiles").select("id,email,full_name,role,access_status").order("created_at", { ascending: false });
+          if (!usersError) setAdminUsers(users ?? []);
+        }
         setActivity((commandResult.data ?? []).map((item) => ({
           id: item.id,
           title: item.prompt.slice(0, 70),
@@ -154,6 +180,43 @@ function LovableRpDemo() {
     void loadWorkspace();
     return () => { active = false; };
   }, []);
+
+  async function handleAuth() {
+    const email = authEmail.trim();
+    if (!email || !authPassword) { setNotice("Informe e-mail e senha."); return; }
+    if (authPassword.length < 8) { setNotice("A senha deve ter pelo menos 8 caracteres."); return; }
+    setAuthBusy(true);
+    setNotice("");
+    try {
+      const result = authMode === "signup"
+        ? await supabase.auth.signUp({ email, password: authPassword, options: { data: { full_name: email.split("@")[0] } } })
+        : await supabase.auth.signInWithPassword({ email, password: authPassword });
+      if (result.error) throw result.error;
+      if (authMode === "signup" && !result.data.session) {
+        setNotice("Conta criada. Confirme o e-mail e entre depois. O acesso ao painel também depende da aprovação do administrador.");
+      } else {
+        setNotice(authMode === "signup" ? "Conta criada. O acesso ficará pendente até aprovação." : "Login realizado. Carregando seu acesso...");
+      }
+      setAuthPassword("");
+      if (result.data.session) window.location.reload();
+    } catch (error) {
+      setNotice(error instanceof Error ? error.message : "Não foi possível autenticar. Verifique se o Supabase está ativo.");
+    } finally { setAuthBusy(false); }
+  }
+
+  async function handleAdminStatus(userId: string, accessStatus: "approved"|"blocked"|"pending") {
+    if (!isAdmin) { setNotice("Somente o administrador aprovado pode alterar acessos."); return; }
+    const { error } = await rpDb.from("lovable_rp_profiles").update({ access_status: accessStatus }).eq("id", userId);
+    if (error) { setNotice("Não foi possível atualizar o usuário. Confira a política RLS e se o Supabase está ativo."); return; }
+    setAdminUsers((items) => items.map((user) => user.id === userId ? { ...user, access_status: accessStatus } : user));
+    setNotice("Acesso do usuário atualizado no Supabase.");
+  }
+
+  async function handleSignOut() {
+    const { error } = await supabase.auth.signOut();
+    if (error) { setNotice("Não foi possível sair da sessão."); return; }
+    window.location.reload();
+  }
 
   async function handleConnectGithub() {
     if (!githubToken.trim()) { setNotice("Cole um token do GitHub com acesso de leitura e gravação de Contents."); return; }
@@ -296,9 +359,9 @@ function LovableRpDemo() {
           </nav>
 
           <div className="m-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <div className="mb-2 flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-600" /><span className="text-xs font-bold text-slate-800">Modo de visualização</span></div>
-            <p className="text-xs leading-5 text-slate-500">Login e controle de usuários ainda não estão ativos nesta prévia.</p>
-            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800"><span className="h-1.5 w-1.5 rounded-full bg-amber-500" /> DEMO</div>
+            <div className="mb-2 flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-emerald-600" /><span className="text-xs font-bold text-slate-800">Status de acesso</span></div>
+            <p className="text-xs leading-5 text-slate-500">{signedInEmail || "Entre com sua conta para acessar os dados pessoais."}</p>
+            <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-[10px] font-bold text-amber-800">{databaseStatus}</div>
           </div>
           <div className="border-t border-slate-100 p-4">
             <div className="flex items-center gap-3">
@@ -318,14 +381,14 @@ function LovableRpDemo() {
             <div className="flex items-center gap-2 sm:gap-3">
               <div className="hidden items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-xs font-semibold text-slate-600 sm:flex"><span className={`h-2 w-2 rounded-full ${databaseStatus === "Supabase conectado" ? "bg-emerald-500" : "bg-amber-500"}`} /> {databaseStatus}</div>
               <button onClick={() => setNotice("A central de notificações será conectada quando o backend estiver pronto.")} className="relative rounded-xl border border-slate-200 p-2.5 text-slate-500 hover:bg-slate-50" aria-label="Notificações"><Activity className="h-4 w-4" /><span className="absolute right-2 top-2 h-1.5 w-1.5 rounded-full bg-pink-500" /></button>
-              <button onClick={() => setNotice("Perfil e autenticação serão configurados depois da aprovação da interface.")} className="flex items-center gap-2 rounded-xl border border-slate-200 p-1.5 pr-2.5 hover:bg-slate-50"><span className="flex h-7 w-7 items-center justify-center rounded-lg bg-pink-100 text-xs font-bold text-pink-700">MS</span><ChevronDown className="hidden h-4 w-4 text-slate-400 sm:block" /></button>
+              {signedInEmail ? <button onClick={handleSignOut} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold hover:bg-slate-50" title={signedInEmail}>Sair · {signedInEmail}</button> : <button onClick={() => { setActiveNav("Conexões"); setNotice("Entre ou crie uma conta na área de acesso abaixo."); }} className="rounded-xl border border-slate-200 px-3 py-2 text-xs font-semibold hover:bg-slate-50">Entrar</button>}
             </div>
           </header>
 
           <div className="mx-auto max-w-[1440px] p-4 sm:p-7 lg:p-9">
             <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div><p className="mb-2 text-sm font-medium text-pink-600">Olá, Mário 👋</p><h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">O que vamos construir hoje?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{activeDescription}</p></div>
-              <button onClick={() => { setActiveNav("Projetos"); setNotice("A conexão real com repositórios será configurada depois."); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-200 transition hover:bg-slate-700"><Plus className="h-4 w-4" /> Novo projeto</button>
+              <button onClick={() => { setActiveNav("Conexões"); setNotice(signedInEmail ? "Conecte o GitHub na área de conexões para configurar repositórios." : "Entre na sua conta para gerenciar seu espaço de trabalho."); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-200 transition hover:bg-slate-700"><Plus className="h-4 w-4" /> Novo projeto</button>
             </div>
 
             <section hidden={activeNav !== "Visão geral" && activeNav !== "Comandos"} className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-br from-[#24152f] via-[#3b1740] to-[#6d174e] p-5 text-white shadow-xl shadow-pink-100 sm:p-8">
@@ -356,7 +419,7 @@ function LovableRpDemo() {
                   <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
                     <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                       <div><h3 className="font-bold">Seus projetos</h3><p className="mt-1 text-sm text-slate-500">Repositórios que poderão ser gerenciados pelo painel.</p></div>
-                      <button onClick={() => setNotice("A conexão OAuth com GitHub e o cadastro de repositórios serão ativados na próxima etapa.")} className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-pink-700"><Plus className="h-4 w-4" /> Conectar GitHub</button>
+                      <button onClick={() => setActiveNav("Conexões")} className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-pink-700"><Plus className="h-4 w-4" /> Configurar conexões</button>
                     </div>
                     {(databaseStatus === "Supabase conectado" ? projects : [{ id: "demo", name: "new-page-maker", repository_full_name: "marao21/new-page-maker", branch: "main", status: "demo" }]).map((project) => (
                       <div key={project.id} className="mb-3 flex flex-col gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center">
@@ -406,17 +469,22 @@ function LovableRpDemo() {
                     <div className="mt-5 grid gap-3 md:grid-cols-3">
                       {[{ name: "GitHub", detail: "Repositórios, branches e commits", icon: Github }, { name: "Supabase", detail: "Banco de dados e permissões", icon: DatabaseIcon }, { name: "Gemini", detail: "IA para analisar e editar arquivos", icon: Bot }].map((connection) => { const Icon = connection.icon; const connected = connection.name === "GitHub" ? !!githubUser : connection.name === "Gemini" ? geminiConnected : databaseStatus === "Supabase conectado"; return <div key={connection.name} className="rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-50 text-slate-700"><Icon className="h-5 w-5" /></div><span className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${connected ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700"}`}>{connected ? "Conectado" : "Pendente"}</span></div><p className="mt-4 text-sm font-bold">{connection.name}</p><p className="mt-1 text-xs leading-5 text-slate-500">{connection.detail}</p><button onClick={() => setNotice(connection.name === "Supabase" ? "O banco precisa estar ativo e receber a migração do Lovable RP Web." : `A integração real com ${connection.name} ainda não foi configurada.`)} className="mt-4 text-xs font-bold text-pink-600 hover:text-pink-700">Ver configuração <ArrowRight className="ml-1 inline h-3 w-3" /></button></div>; })}
                     </div>
-                    <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">A execução de código usa o GitHub e a Gemini API. O histórico no Supabase depende de banco ativo, migração aplicada e usuário autenticado/aprovado. O modo “ChatGPT da minha sessão” da extensão não pode ser reutilizado diretamente por um site comum.</p>
+                    <div className="mt-5 rounded-xl border border-slate-200 p-4">
+                      <div className="flex flex-wrap items-center justify-between gap-3"><div><h4 className="font-bold">Acesso ao Lovable RP Web</h4><p className="mt-1 text-xs text-slate-500">Login e cadastro com Supabase Auth. O novo cadastro fica pendente até aprovação.</p></div><div className="flex rounded-lg bg-slate-100 p-1"><button onClick={() => setAuthMode("login")} className={`rounded-md px-3 py-1.5 text-xs font-bold ${authMode === "login" ? "bg-white shadow-sm" : "text-slate-500"}`}>Entrar</button><button onClick={() => setAuthMode("signup")} className={`rounded-md px-3 py-1.5 text-xs font-bold ${authMode === "signup" ? "bg-white shadow-sm" : "text-slate-500"}`}>Criar conta</button></div></div>
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2"><div><label htmlFor="rp-auth-email" className="block text-xs font-semibold text-slate-600">E-mail</label><input id="rp-auth-email" type="email" autoComplete="email" value={authEmail} onChange={(event) => setAuthEmail(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400" placeholder="voce@exemplo.com" /></div><div><label htmlFor="rp-auth-password" className="block text-xs font-semibold text-slate-600">Senha</label><input id="rp-auth-password" type="password" autoComplete={authMode === "login" ? "current-password" : "new-password"} value={authPassword} onChange={(event) => setAuthPassword(event.target.value)} className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400" placeholder="Mínimo de 8 caracteres" /></div></div>
+                      <button onClick={() => void handleAuth()} disabled={authBusy} className="mt-3 rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-pink-700 disabled:opacity-60">{authBusy ? "Aguarde..." : authMode === "login" ? "Entrar com Supabase" : "Criar minha conta"}</button>
+                      {signedInEmail && <button onClick={() => void handleSignOut()} className="ml-3 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-bold hover:bg-slate-50">Sair</button>}
+                    </div>
+                    <p className="mt-4 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Status do banco: {databaseStatus}. O projeto Supabase vinculado está inativo; autenticação, histórico e aprovação só funcionarão após reativar o projeto e aplicar a migração. O site não reutiliza automaticamente a sessão da extensão ChatGPT.</p>
                   </div>
                 )}
                 {activeNav === "Usuários" && (
                   <div className="rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
-                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-5"><div><h3 className="font-bold">Controle de acesso</h3><p className="mt-1 text-sm text-slate-500">Exemplo visual da aprovação manual que será implementada depois.</p></div><span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800">Somente demonstração</span></div>
-                    <div className="divide-y divide-slate-100">
-                      {demoUsers.map((user) => <div key={user.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 text-sm font-bold text-pink-700">{user.name.split(" ").map((part) => part[0]).slice(0,2).join("")}</div><div className="min-w-0 flex-1"><p className="text-sm font-bold">{user.name}</p><p className="text-xs text-slate-500">{user.email}</p></div><span className={`w-fit rounded-full px-3 py-1 text-xs font-bold ${user.status === "Aprovado" ? "bg-emerald-50 text-emerald-700" : user.status === "Bloqueado" ? "bg-red-50 text-red-700" : "bg-amber-50 text-amber-700"}`}>{user.status}</span><div className="flex gap-2"><button onClick={() => { setDemoUsers((items) => items.map((item) => item.id === user.id ? { ...item, status: "Aprovado" } : item)); setNotice(`Aprovação de demonstração: ${user.name}. Nada foi alterado no banco.`); }} className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">Aprovar</button><button onClick={() => { setDemoUsers((items) => items.map((item) => item.id === user.id ? { ...item, status: "Bloqueado" } : item)); setNotice(`Bloqueio de demonstração: ${user.name}. Nada foi alterado no banco.`); }} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50">Bloquear</button></div></div>)}
-                    </div>
+                    <div className="border-b border-slate-100 p-5"><h3 className="font-bold">Controle de acesso</h3><p className="mt-1 text-sm text-slate-500">Aprovação real de usuários autorizados pelo Supabase.</p></div>
+                    {!signedInEmail ? <p className="p-6 text-sm text-slate-500">Faça login na área Conexões. A lista só é exibida para administradores autenticados e aprovados.</p> : !isAdmin ? <p className="p-6 text-sm text-slate-500">Esta área exige o perfil de administrador aprovado. Seu status atual: {databaseStatus}.</p> : adminUsers.length === 0 ? <p className="p-6 text-sm text-slate-500">Nenhum usuário carregado ou o Supabase está indisponível.</p> :
+                      <div className="divide-y divide-slate-100">{adminUsers.map((user) => <div key={user.id} className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center"><div className="flex h-10 w-10 items-center justify-center rounded-full bg-pink-100 text-sm font-bold text-pink-700">{(user.full_name || user.email || "U").split(" ").map((part) => part[0]).slice(0,2).join("").toUpperCase()}</div><div className="min-w-0 flex-1"><p className="break-all text-sm font-bold">{user.full_name || "Sem nome"}</p><p className="break-all text-xs text-slate-500">{user.email || user.id}</p></div><span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold">{user.role} · {user.access_status}</span><div className="flex flex-wrap gap-2"><button onClick={() => void handleAdminStatus(user.id,"approved")} className="rounded-lg border border-emerald-200 px-3 py-2 text-xs font-bold text-emerald-700 hover:bg-emerald-50">Aprovar</button><button onClick={() => void handleAdminStatus(user.id,"pending")} className="rounded-lg border border-amber-200 px-3 py-2 text-xs font-bold text-amber-700 hover:bg-amber-50">Pendente</button><button onClick={() => void handleAdminStatus(user.id,"blocked")} className="rounded-lg border border-red-200 px-3 py-2 text-xs font-bold text-red-700 hover:bg-red-50">Bloquear</button></div></div>)}</div>}
                   </div>
-                )}
+                )}}
               </section>
             )}
 
@@ -454,7 +522,7 @@ function LovableRpDemo() {
                 </div>
               </div>
             </section>
-            <footer className="mt-8 flex flex-col justify-between gap-2 border-t border-slate-200 pt-5 text-[11px] text-slate-400 sm:flex-row"><span>Lovable RP Web · prévia sem login</span><span>Tokens ficam nesta sessão; o histórico Supabase exige banco ativo e acesso aprovado.</span></footer>
+            <footer className="mt-8 flex flex-col justify-between gap-2 border-t border-slate-200 pt-5 text-[11px] text-slate-400 sm:flex-row"><span>Lovable RP Web · versão web em implementação</span><span>Tokens do GitHub/Gemini ficam só na sessão do navegador; dados e permissões dependem do Supabase ativo.</span></footer>
           </div>
         </main>
       </div>
