@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LovableRpRouteImport } from './routes/lovable-rp'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as MembrosRouteImport } from './routes/membros'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
@@ -20,6 +21,11 @@ import { Route as PedidoIdRouteImport } from './routes/pedido.$id'
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableRpRoute = LovableRpRouteImport.update({
+  id: '/lovable-rp',
+  path: '/lovable-rp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -55,6 +61,7 @@ const PedidoIdRoute = PedidoIdRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/lovable-rp': typeof LovableRpRoute
   '/login': typeof LoginRoute
   '/membros': typeof MembrosRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -64,6 +71,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/lovable-rp': typeof LovableRpRoute
   '/login': typeof LoginRoute
   '/membros': typeof MembrosRoute
   '/privacidade': typeof PrivacidadeRoute
@@ -73,6 +81,7 @@ export interface FileRoutesByTo {
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
+  '/lovable-rp': typeof LovableRpRoute
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/membros': typeof MembrosRoute
@@ -85,6 +94,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/lovable-rp'
     | '/login'
     | '/membros'
     | '/privacidade'
@@ -94,6 +104,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/lovable-rp'
     | '/login'
     | '/membros'
     | '/privacidade'
@@ -102,6 +113,7 @@ export interface FileRouteTypes {
     | '/pedido/$id'
   id:
     | '__root__'
+    | '/lovable-rp'
     | '/'
     | '/login'
     | '/membros'
@@ -113,6 +125,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  LovableRpRoute: typeof LovableRpRoute
   LoginRoute: typeof LoginRoute
   MembrosRoute: typeof MembrosRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
@@ -123,6 +136,13 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/lovable-rp': {
+      id: '/lovable-rp'
+      path: '/lovable-rp'
+      fullPath: '/lovable-rp'
+      preLoaderRoute: typeof LovableRpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -177,6 +197,7 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  LovableRpRoute: LovableRpRoute,
   LoginRoute: LoginRoute,
   MembrosRoute: MembrosRoute,
   PrivacidadeRoute: PrivacidadeRoute,
