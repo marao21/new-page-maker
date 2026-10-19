@@ -11,6 +11,8 @@ type Change = { path: string; content: string };
 
 const GITHUB_API = "https://api.github.com";
 const GEMINI_MODEL = "gemini-2.5-flash";
+const OPENAI_MODEL = "gpt-4.1-mini";
+type AIProvider = "gemini" | "openai";
 const MAX_CONTEXT_FILES = 8;
 const MAX_FILE_CHARS = 32000;
 const MAX_PATCH_FILES = 10;
@@ -55,7 +57,13 @@ export async function validateGitHubToken(token: string) {
 
 export async function validateGeminiApiKey(apiKey: string) {
   if (!apiKey.trim()) throw new Error("Informe uma chave da API Gemini.");
-  await callGemini(apiKey, 'Responda somente JSON: {"ok":true,"message":"conectado"}.');
+  await callAI("gemini", apiKey, 'Responda somente JSON: {"ok":true,"message":"conectado"}.');
+  return true;
+}
+
+export async function validateOpenAIApiKey(apiKey: string) {
+  if (!apiKey.trim()) throw new Error("Informe uma chave da API OpenAI.");
+  await callAI("openai", apiKey, 'Responda somente JSON: {"ok":true,"message":"conectado"}.');
   return true;
 }
 
@@ -90,8 +98,35 @@ function encodeBase64Utf8(value: string) {
   return btoa(binary);
 }
 
-async function callGemini(apiKey: string, prompt: string) {
-  const response = await fetch(
+async function callAI(provider: AIProvider, apiKey: string, prompt: string) {
+  let response: Response;
+  let data: any;
+  if (provider === "openai") {
+    response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey.trim()}` },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        input: [{ role: "user", content: [{ type: "input_text", text: prompt }] }],
+        temperature: 0.15,
+      }),
+    });
+    data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const message = data?.error?.message || `OpenAI HTTP ${response.status}`;
+      if (response.status === 401) throw new Error("Chave OpenAI inválida ou revogada.");
+      if (response.status === 429) throw new Error("Limite ou saldo da API OpenAI atingido. Confira sua conta de API.");
+      throw new Error(`Não foi possível usar a API OpenAI: ${message}`);
+    }
+    const outputText = Array.isArray(data?.output)
+      ? data.output.flatMap((item: any) => Array.isArray(item?.content) ? item.content : []).filter((part: any) => part?.type === "output_text").map((part: any) => part.text || "").join("")
+      : "";
+    if (!outputText.trim()) throw new Error("A OpenAI não retornou texto. Tente novamente.");
+    try { return JSON.parse(outputText.replace(/^\\uFEFF/, "").replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```\\s*$/, "")); }
+    catch { throw new Error("A resposta da OpenAI não veio em JSON válido. Tente novamente."); }
+  }
+
+  response = await fetch(
     `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey.trim())}`,
     {
       method: "POST",
@@ -106,7 +141,7 @@ async function callGemini(apiKey: string, prompt: string) {
       }),
     },
   );
-  const data = await response.json().catch(() => ({}));
+  data = await response.json().catch(() => ({}));
   if (!response.ok) {
     const message = data?.error?.message || `Gemini HTTP ${response.status}`;
     if (response.status === 400 || response.status === 403) throw new Error(`Não foi possível usar a chave Gemini: ${message}`);
@@ -115,7 +150,7 @@ async function callGemini(apiKey: string, prompt: string) {
   }
   const text = data?.candidates?.[0]?.content?.parts?.map((part: any) => part.text || "").join("") || "";
   if (!text.trim()) throw new Error("O Gemini não retornou uma resposta. Tente novamente com um pedido mais específico.");
-  try { return JSON.parse(text.replace(/^\uFEFF/, "").replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "")); }
+  try { return JSON.parse(text.replace(/^\\uFEFF/, "").replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```\\s*$/, "")); }
   catch { throw new Error("A resposta da IA não veio em JSON válido. Tente novamente."); }
 }
 
@@ -148,14 +183,17 @@ function parseJsonResponse<T>(value: unknown, label: string): T {
 
 export async function executeGitHubEdit(args: {
   githubToken: string;
-  geminiApiKey: string;
+  geminiApiKey?: string;
+  openaiApiKey?: string;
+  aiProvider?: AIProvider;
   repository: string;
   branch: string;
   request: string;
   onProgress?: (message: string) => void;
 }) {
   const token = args.githubToken.trim();
-  const apiKey = args.geminiApiKey.trim();
+  const provider: AIProvider = args.aiProvider || "gemini";
+  const apiKey = (provider === "openai" ? args.openaiApiKey : args.geminiApiKey || "").trim();
   const repo = safeRepoName(args.repository);
   const branch = args.branch.trim() || "main";
   const request = args.request.trim();
@@ -180,7 +218,7 @@ export async function executeGitHubEdit(args: {
 
   progress("Selecionando os arquivos relevantes...");
   const treeList = tree.slice(0, 1200).map((item) => item.path + (item.size ? ` (${item.size} bytes)` : "")).join("\n");
-  const selection = await callGemini(apiKey, [
+  const selection = await callAI(provider, apiKey, [
     "Você é um engenheiro de software cuidadoso. Selecione os arquivos existentes mais relevantes para implementar o pedido.",
     "Responda somente JSON com a forma {\"paths\":[\"caminho/arquivo.ext\"],\"reason\":\"motivo breve\"}.",
     "Escolha no máximo 8 caminhos que existam exatamente na lista. Prefira componentes, rotas, estilos e configurações estritamente necessárias. Não escolha arquivos secretos, dependências instaladas ou arquivos de lock.",
