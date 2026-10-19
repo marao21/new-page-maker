@@ -11,8 +11,9 @@ type Change = { path: string; content: string };
 
 const GITHUB_API = "https://api.github.com";
 const GEMINI_MODEL = "gemini-3.8-flash";
-const OPENAI_MODEL = "gpt-4.1-mini";
-type AIProvider = "gemini" | "openai";
+const OPENAI_MODEL = "openai/gpt-4.1-mini";
+const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
+type AIProvider = "gemini" | "openai" | "openrouter";
 const MAX_CONTEXT_FILES = 8;
 const MAX_FILE_CHARS = 32000;
 const MAX_PATCH_FILES = 10;
@@ -101,11 +102,20 @@ function encodeBase64Utf8(value: string) {
 async function callAI(provider: AIProvider, apiKey: string, prompt: string) {
   let response: Response;
   let data: any;
-  if (provider === "openai") {
-    response = await fetch("https://api.openai.com/v1/responses", {
+  if (provider === "openai" || provider === "openrouter") {
+    const isOpenRouter = provider === "openrouter";
+    response = await fetch(isOpenRouter ? `${OPENROUTER_BASE_URL}/chat/completions` : "https://api.openai.com/v1/responses", {
       method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey.trim()}` },
-      body: JSON.stringify({
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey.trim()}`,
+        ...(isOpenRouter ? { "HTTP-Referer": "https://new-page-maker.vercel.app", "X-OpenRouter-Title": "New Page Maker" } : {}),
+      },
+      body: JSON.stringify(isOpenRouter ? {
+        model: OPENAI_MODEL,
+        messages: [{ role: "user", content: prompt }],
+        temperature: 0.15,
+      } : {
         model: OPENAI_MODEL,
         input: [{ role: "user", content: [{ type: "input_text", text: prompt }] }],
         temperature: 0.15,
@@ -113,15 +123,19 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string) {
     });
     data = await response.json().catch(() => ({}));
     if (!response.ok) {
-      const message = data?.error?.message || `OpenAI HTTP ${response.status}`;
-      if (response.status === 401) throw new Error("Chave OpenAI inválida ou revogada.");
-      if (response.status === 429) throw new Error("Limite ou saldo da API OpenAI atingido. Confira sua conta de API.");
-      throw new Error(`Não foi possível usar a API OpenAI: ${message}`);
+      const message = data?.error?.message || `HTTP ${response.status}`;
+      const providerName = provider === "openrouter" ? "OpenRouter" : "OpenAI";
+      if (response.status === 401 || response.status === 403) throw new Error(`Chave ${providerName} inválida ou sem permissão: ${message}`);
+      if (response.status === 429) throw new Error(`Limite ou saldo da ${providerName} atingido. Confira sua conta e cotas.`);
+      throw new Error(`Não foi possível usar ${providerName}: ${message}`);
     }
-    const outputText = Array.isArray(data?.output)
-      ? data.output.flatMap((item: any) => Array.isArray(item?.content) ? item.content : []).filter((part: any) => part?.type === "output_text").map((part: any) => part.text || "").join("")
-      : "";
+    const outputText = provider === "openrouter"
+      ? data?.choices?.[0]?.message?.content || ""
+      : Array.isArray(data?.output)
+        ? data.output.flatMap((item: any) => Array.isArray(item?.content) ? item.content : []).filter((part: any) => part?.type === "output_text").map((part: any) => part.text || "").join("")
+        : "";
     if (!outputText.trim()) throw new Error("A OpenAI não retornou texto. Tente novamente.");
+    if (provider === "openrouter") return outputText;
     try { return JSON.parse(outputText.replace(/^\\uFEFF/, "").replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```\\s*$/, "")); }
     catch { throw new Error("A resposta da OpenAI não veio em JSON válido. Tente novamente."); }
   }
@@ -223,7 +237,7 @@ export async function executeGitHubEdit(args: {
   const request = args.request.trim();
   const progress = args.onProgress || (() => {});
   if (!token) throw new Error("Conecte o GitHub nas configurações.");
-  if (!apiKey) throw new Error("Informe a chave da API Gemini nas configurações.");
+  if (!apiKey) throw new Error(provider === "openai" ? "Informe a chave da API OpenAI nas configurações." : provider === "openrouter" ? "Informe a chave da API OpenRouter nas configurações." : "Informe a chave da API Gemini nas configurações.");
   if (request.length < 3) throw new Error("Descreva a alteração que deseja realizar.");
   if (request.length > 12000) throw new Error("O pedido ultrapassa o limite de 12.000 caracteres.");
 
@@ -274,7 +288,7 @@ export async function executeGitHubEdit(args: {
   progress(`Analisando ${selectedFiles.length} arquivos e preparando as alterações...`);
   const fileContext = selectedFiles.map((file) => `--- ARQUIVO: ${file.path} ---\n${file.content}\n--- FIM DO ARQUIVO ---`).join("\n\n");
   const generated = parseJsonResponse<{ summary?: string; commitMessage?: string; changes?: Change[] }>(
-    await callAI("gemini", apiKey, [
+    await callAI(provider, apiKey, [
       "Você é um agente de engenharia de software que edita um repositório GitHub.",
       "Retorne SOMENTE JSON válido: {\"summary\":\"resumo em português\",\"commitMessage\":\"mensagem curta de commit\",\"changes\":[{\"path\":\"caminho relativo\",\"content\":\"conteúdo COMPLETO do arquivo\"}]}.",
       "Edite somente o necessário para cumprir o pedido. Para cada arquivo modificado, devolva o conteúdo COMPLETO, não um diff. Não invente APIs, não remova funcionalidades não relacionadas, não inclua markdown fences e não altere arquivos secretos.",
