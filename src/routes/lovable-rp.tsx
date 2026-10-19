@@ -61,6 +61,7 @@ const navItems = [
   { label: "Visão geral", icon: LayoutDashboard },
   { label: "Comandos", icon: MessageSquareText },
   { label: "Projetos", icon: FolderGit2 },
+  { label: "Prévia", icon: Play },
   { label: "Histórico", icon: History },
   { label: "Conexões", icon: Link2 },
   { label: "Usuários", icon: Users },
@@ -79,6 +80,8 @@ function LovableRpDemo() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [signedInEmail, setSignedInEmail] = useState<string|null>(null);
   const [commandText, setCommandText] = useState("");
+  const [previewUrl, setPreviewUrl] = useState("");
+  const [previewInput, setPreviewInput] = useState("");
   const [githubToken, setGithubToken] = useState("");
   const [geminiApiKey, setGeminiApiKey] = useState("");
   const [openaiApiKey, setOpenaiApiKey] = useState("");
@@ -129,6 +132,9 @@ function LovableRpDemo() {
       setGeminiConnected(!!window.sessionStorage.getItem("lovable-rp-web-gemini-key"));
       setSelectedRepository(window.sessionStorage.getItem("lovable-rp-web-repository") || "marao21/new-page-maker");
       setSelectedBranch(window.sessionStorage.getItem("lovable-rp-web-branch") || "main");
+      const savedPreview = window.sessionStorage.getItem("lovable-rp-web-preview-url") || "";
+      setPreviewUrl(savedPreview);
+      setPreviewInput(savedPreview);
       if (!token) return;
       try {
         const repos = await listGitHubRepositories(token);
@@ -455,6 +461,7 @@ function LovableRpDemo() {
   const activeDescription =
     activeNav === "Comandos" ? "Escreva o que você quer alterar e prepare uma solicitação."
     : activeNav === "Projetos" ? "Organize os repositórios que você utiliza nos seus trabalhos."
+    : activeNav === "Prévia" ? "Visualize seu site dentro do Lovable RP, sem precisar sair do painel."
     : activeNav === "Histórico" ? "Acompanhe solicitações recentes e seus resultados."
     : activeNav === "Conexões" ? "Veja o estado das integrações que serão conectadas ao sistema."
     : activeNav === "Usuários" ? (isAdmin ? "Aprove, bloqueie ou reative contas registradas no Supabase." : "A gestão de usuários exige uma conta administradora aprovada.")
@@ -579,6 +586,27 @@ function LovableRpDemo() {
                       </div>
                     ))}
                     {databaseStatus === "Supabase conectado" && projects.length === 0 && <p className="py-6 text-center text-sm text-slate-400">Nenhum projeto salvo no banco ainda.</p>}
+                  </div>
+                )}
+                {activeNav === "Prévia" && (
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                      <div><h3 className="font-bold">Prévia do projeto</h3><p className="mt-1 text-sm text-slate-500">Abra a versão publicada do seu projeto dentro deste painel.</p></div>
+                      {previewUrl && <button onClick={() => { const frame = document.getElementById("rp-project-preview") as HTMLIFrameElement | null; if (frame) frame.src = previewUrl; }} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold hover:bg-slate-50"><Play className="h-3.5 w-3.5" /> Atualizar prévia</button>}
+                    </div>
+                    <form onSubmit={(event) => { event.preventDefault(); const raw = previewInput.trim(); if (!raw) { setNotice("Cole o endereço publicado do seu projeto."); return; } let parsed: URL; try { parsed = new URL(raw.startsWith("http://") || raw.startsWith("https://") ? raw : "https://" + raw); } catch { setNotice("Esse endereço não parece válido. Use a URL publicada do Lovable ou Vercel."); return; } if (!["https:", "http:"].includes(parsed.protocol)) { setNotice("Use um endereço HTTP ou HTTPS válido."); return; } setPreviewUrl(parsed.toString()); setPreviewInput(parsed.toString()); window.sessionStorage.setItem("lovable-rp-web-preview-url", parsed.toString()); setNotice("Endereço da prévia salvo nesta sessão."); }} className="flex flex-col gap-2 sm:flex-row">
+                      <input aria-label="URL publicada do projeto" value={previewInput} onChange={(event) => setPreviewInput(event.target.value)} placeholder="https://seu-projeto.lovable.app ou https://seu-projeto.vercel.app" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100" />
+                      <button type="submit" className="rounded-xl bg-pink-600 px-5 py-3 text-sm font-bold text-white hover:bg-pink-700">Abrir dentro do site</button>
+                    </form>
+                    {previewUrl ? (
+                      <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
+                        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-2"><p className="min-w-0 truncate text-xs text-slate-500">{previewUrl}</p><button onClick={() => { setPreviewUrl(""); setPreviewInput(""); window.sessionStorage.removeItem("lovable-rp-web-preview-url"); }} className="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100">Limpar</button></div>
+                        <iframe id="rp-project-preview" title="Prévia do projeto selecionado" src={previewUrl} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-downloads" className="h-[70vh] min-h-[480px] w-full bg-white" />
+                        <p className="border-t border-slate-200 bg-white px-3 py-2 text-[11px] leading-5 text-slate-500">Se a prévia ficar em branco ou mostrar bloqueio, o site de destino pode impedir exibição em iframe. Nesse caso, será necessário habilitar a incorporação no site publicado ou usar uma prévia compatível.</p>
+                      </div>
+                    ) : (
+                      <div className="mt-4 flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 text-center"><div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-white text-pink-600 shadow-sm"><Play className="h-6 w-6" /></div><p className="font-semibold">Sua prévia aparecerá aqui</p><p className="mt-1 max-w-lg text-sm text-slate-500">Cole a URL publicada do projeto no campo acima. O painel tenta carregar a página sem tirar você do Lovable RP.</p></div>
+                    )}
                   </div>
                 )}
                 {activeNav === "Histórico" && (
