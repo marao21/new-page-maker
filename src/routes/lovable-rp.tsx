@@ -607,6 +607,28 @@ function LovableRpDemo() {
                   <div className="mt-6 flex flex-wrap gap-2"><span className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/85"><Code2 className="mr-1.5 inline h-3.5 w-3.5" /> Código</span><span className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/85"><Github className="mr-1.5 inline h-3.5 w-3.5" /> GitHub</span><span className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/85"><Sparkles className="mr-1.5 inline h-3.5 w-3.5" /> Automação</span></div>
                 </div>
                 <div className="rounded-2xl border border-white/15 bg-white/[0.08] p-4 backdrop-blur-sm sm:p-5">
+                  <div className="mb-4 rounded-xl border border-white/15 bg-white/[0.07] p-3">
+                    <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                      <div><p className="text-xs font-bold text-white">IA que vai executar esta tarefa</p><p className="mt-1 text-[11px] text-pink-100/70">Escolha o provedor e o modelo antes de enviar o pedido.</p></div>
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "bg-emerald-400/15 text-emerald-200" : "bg-amber-300/15 text-amber-200"}`}>{(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "Conectada" : "Precisa conectar"}</span>
+                    </div>
+                    <div className="grid gap-2 sm:grid-cols-2">
+                      <div>
+                        <label htmlFor="rp-command-ai-provider" className="mb-1 block text-[11px] font-semibold text-pink-100/80">Provedor de IA</label>
+                        <select id="rp-command-ai-provider" value={aiProvider} onChange={(event) => { const value = event.target.value as AIProvider; setAiProvider(value); window.sessionStorage.setItem("lovable-rp-web-ai-provider", value); const list = value === "openai" ? openaiModels : value === "openrouter" ? openrouterModels : geminiModels; const nextModel = list[0]?.id || (value === "gemini" ? "gemini-3.8-flash" : value === "openai" ? "gpt-4.1-mini" : ""); setAiModel(nextModel); window.sessionStorage.setItem("lovable-rp-web-ai-model", nextModel); }} className="w-full rounded-lg border border-white/15 bg-[#32152f] px-3 py-2 text-xs text-white outline-none focus:border-pink-300">
+                          <option value="gemini">Google Gemini</option><option value="openai">OpenAI (GPT)</option><option value="openrouter">OpenRouter</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label htmlFor="rp-command-ai-model" className="mb-1 block text-[11px] font-semibold text-pink-100/80">Modelo</label>
+                        <select id="rp-command-ai-model" value={aiModel} onChange={(event) => { setAiModel(event.target.value); window.sessionStorage.setItem("lovable-rp-web-ai-model", event.target.value); }} className="w-full rounded-lg border border-white/15 bg-[#32152f] px-3 py-2 text-xs text-white outline-none focus:border-pink-300" disabled={!(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected)}>
+                          {!(aiProvider === "gemini" ? geminiModels : aiProvider === "openai" ? openaiModels : openrouterModels).length && <option value={aiModel}>{aiModel || "Conecte a IA para listar modelos"}</option>}
+                          {(aiProvider === "gemini" ? geminiModels : aiProvider === "openai" ? openaiModels : openrouterModels).map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    {!(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) && <button type="button" onClick={() => setActiveNav("Conexões")} className="mt-2 text-[11px] font-bold text-pink-200 underline underline-offset-2">Conectar ou testar esta IA em Conexões</button>}
+                  </div>
                   <div className="mb-4 flex flex-wrap gap-2">
                     <button type="button" onClick={() => { setCommandMode("edit"); setCommandText(""); }} className={`rounded-lg px-3 py-2 text-xs font-bold ${commandMode === "edit" ? "bg-pink-500 text-white" : "border border-white/15 text-white/80"}`}>Editar projeto existente</button>
                     <button type="button" onClick={() => { setCommandMode("new"); setCommandText(""); }} className={`rounded-lg px-3 py-2 text-xs font-bold ${commandMode === "new" ? "bg-pink-500 text-white" : "border border-white/15 text-white/80"}`}>Criar projeto do zero</button>
