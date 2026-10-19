@@ -265,12 +265,10 @@ export async function createGitHubProject(args: {
   progress("Criando repositório " + repoName + " no GitHub...");
   const repo = await githubRequest<any>(token, "/user/repos", {
     method: "POST",
-    body: JSON.stringify({ name: repoName, description: String(plan.description || args.request).slice(0, 300), private: true, auto_init: true }),
+    body: JSON.stringify({ name: repoName, description: String(plan.description || args.request).slice(0, 300), private: true, auto_init: false }),
   });
   const fullName = String(repo.full_name);
   const branch = String(repo.default_branch || "main");
-  const ref = await githubRequest<any>(token, "/repos/" + fullName + "/git/ref/heads/" + encodeURIComponent(branch));
-  const parent = await githubRequest<any>(token, "/repos/" + fullName + "/git/commits/" + ref.object.sha);
   const files = plan.files.filter((file) => file && typeof file.path === "string" && typeof file.content === "string" && file.path.length < 240 && !file.path.startsWith("/") && !file.path.split("/").includes(".."));
   if (!files.length) throw new Error("A IA não gerou arquivos seguros para gravar.");
   progress("Gravando " + files.length + " arquivos iniciais no novo repositório...");
@@ -278,9 +276,9 @@ export async function createGitHubProject(args: {
     const blob = await githubRequest<any>(token, "/repos/" + fullName + "/git/blobs", { method: "POST", body: JSON.stringify({ content: file.content, encoding: "utf-8" }) });
     return { path: file.path, mode: "100644", type: "blob", sha: blob.sha };
   }));
-  const tree = await githubRequest<any>(token, "/repos/" + fullName + "/git/trees", { method: "POST", body: JSON.stringify({ base_tree: parent.tree.sha, tree: blobs }) });
-  const commit = await githubRequest<any>(token, "/repos/" + fullName + "/git/commits", { method: "POST", body: JSON.stringify({ message: "feat: scaffold new project", tree: tree.sha, parents: [ref.object.sha] }) });
-  await githubRequest<any>(token, "/repos/" + fullName + "/git/refs/heads/" + encodeURIComponent(branch), { method: "PATCH", body: JSON.stringify({ sha: commit.sha, force: false }) });
+  const tree = await githubRequest<any>(token, "/repos/" + fullName + "/git/trees", { method: "POST", body: JSON.stringify({ tree: blobs }) });
+  const commit = await githubRequest<any>(token, "/repos/" + fullName + "/git/commits", { method: "POST", body: JSON.stringify({ message: "feat: scaffold new project", tree: tree.sha, parents: [] }) });
+  await githubRequest<any>(token, "/repos/" + fullName + "/git/refs", { method: "POST", body: JSON.stringify({ ref: "refs/heads/" + branch, sha: commit.sha }) });
   return { repository: fullName, branch, commitSha: commit.sha, commitUrl: "https://github.com/" + fullName + "/commit/" + commit.sha, repoUrl: String(repo.html_url), summary: String(plan.summary || "Projeto inicial criado."), files: files.map((file) => file.path), needsSupabase: !!plan.needsSupabase, supabaseReason: String(plan.reason || "") };
 }
 
