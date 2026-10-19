@@ -250,7 +250,7 @@ export async function createGitHubProject(args: {
   const plan = parseJsonResponse<{ needsSupabase: boolean; reason: string; description: string; files: Array<{path:string;content:string}>; summary: string }>(
     await callAI(provider, apiKey, [
       "Você é um agente que cria projetos web completos do zero.",
-      "Responda apenas JSON válido: {\\"needsSupabase\\":boolean,\\"reason\\":string,\\"description\\":string,\\"summary\\":string,\\"files\\":[{\\"path\\":string,\\"content\\":string}]}",
+      'Responda apenas JSON válido: {"needsSupabase":boolean,"reason":string,"description":string,"summary":string,"files":[{"path":string,"content":string}]}' ,
       "Decida com critério: páginas estáticas, landing pages e sites institucionais simples normalmente NÃO precisam de Supabase. Login, dados persistentes, painel, marketplace, cadastro, pedidos ou banco de dados normalmente precisam. Não adicione chaves secretas. Gere arquivos completos, no máximo 20 arquivos e 180000 caracteres por arquivo. Gere um projeto Vite + React + TypeScript funcional com package.json, index.html, src/main.tsx, src/App.tsx e src/index.css. Se precisar de Supabase, inclua a dependência e integração por variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY, mas não invente credenciais nem suponha que o projeto Supabase já existe.",
       "NOME DO REPOSITÓRIO: " + repoName,
       "PEDIDO DO USUÁRIO: " + args.request,
