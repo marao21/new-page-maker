@@ -139,11 +139,11 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
         ...(isOpenRouter ? { "HTTP-Referer": "https://new-page-maker.vercel.app", "X-OpenRouter-Title": "New Page Maker" } : {}),
       },
       body: JSON.stringify(isOpenRouter ? {
-        model: OPENAI_MODEL,
+        model: selectedModel || OPENAI_MODEL,
         messages: [{ role: "user", content: prompt }],
         temperature: 0.15,
       } : {
-        model: OPENAI_MODEL,
+        model: selectedModel || "gpt-4.1-mini",
         input: [{ role: "user", content: [{ type: "input_text", text: prompt }] }],
         temperature: 0.15,
       }),
