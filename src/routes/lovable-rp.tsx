@@ -87,7 +87,7 @@ function LovableRpDemo() {
   const [selectedBranch, setSelectedBranch] = useState("main");
   const [connectingGithub, setConnectingGithub] = useState(false);
   const [githubDeviceUserCode, setGithubDeviceUserCode] = useState("");
-  const [githubClientId, setGithubClientId] = useState(() => window.sessionStorage.getItem("lovable-rp-web-github-client-id") || ((import.meta as any).env?.VITE_GITHUB_CLIENT_ID as string | undefined) || "");
+  const githubClientId = "Iv23liJiWvTpCYrEmnmM";
   const [githubDeviceBusy, setGithubDeviceBusy] = useState(false);
   const [testingGemini, setTestingGemini] = useState(false);
   const [geminiConnected, setGeminiConnected] = useState(false);
@@ -225,9 +225,7 @@ function LovableRpDemo() {
   }
 
   async function handleStartGithubDeviceFlow() {
-    const clientId = githubClientId.trim();
-    if (!clientId) { setNotice("Informe o Client ID público do OAuth App do GitHub com Device Flow ativado."); return; }
-    window.sessionStorage.setItem("lovable-rp-web-github-client-id", clientId);
+    const clientId = githubClientId;
     setGithubDeviceBusy(true); setGithubDeviceUserCode(""); setNotice("");
     // Open synchronously from the click so the browser does not block the GitHub authorization tab.
     const authWindow = window.open("about:blank", "_blank");
@@ -544,8 +542,7 @@ function LovableRpDemo() {
                     <div className="mt-5 grid gap-4 lg:grid-cols-2">
                       <div className="rounded-xl border border-slate-200 p-4">
                         <div className="flex items-center gap-2"><Github className="h-5 w-5" /><h4 className="text-sm font-bold">GitHub</h4>{githubUser && <span className="ml-auto rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Conectado</span>}</div>
-                        <label htmlFor="rp-github-client-id" className="mt-4 block text-xs font-semibold text-slate-600">Client ID do OAuth App</label>
-                        <input id="rp-github-client-id" type="text" autoComplete="off" value={githubClientId} onChange={(event) => { setGithubClientId(event.target.value); window.sessionStorage.setItem("lovable-rp-web-github-client-id", event.target.value); }} placeholder="Ex.: Iv1.xxxxx ou Ov23..." className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100" />
+                        <p className="mt-4 text-xs leading-5 text-slate-500">Conexão segura com o aplicativo GitHub Lovable RP. Clique abaixo para gerar seu código de autorização.</p>
                         <p className="mt-2 text-[11px] leading-5 text-slate-500">Use o Client ID público do OAuth App da Lovable RP, com Device Flow ativado. Não cole o Client Secret nem seu token pessoal.</p>
                         <p className="mt-3 text-xs leading-5 text-slate-500">Conecte sua conta pela página oficial do GitHub. O código será gerado pelo GitHub e a conexão será verificada automaticamente.</p>
                         <button onClick={handleStartGithubDeviceFlow} disabled={githubDeviceBusy} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 via-fuchsia-600 to-orange-400 px-4 py-3 text-sm font-bold text-white shadow-sm hover:brightness-105 disabled:opacity-60"><Github className="h-4 w-4" />{githubDeviceBusy ? "Aguardando autorização..." : githubUser ? "Reconectar GitHub" : "Conectar GitHub"}<ArrowRight className="h-4 w-4" /></button>
