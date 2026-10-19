@@ -86,7 +86,7 @@ export async function listOpenAIModels(apiKey: string): Promise<AIModelOption[]>
 
 export async function listGeminiModels(apiKey: string): Promise<AIModelOption[]> {
   if (!apiKey.trim()) throw new Error("Informe a chave Gemini para carregar os modelos.");
-  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(apiKey.trim()));
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models", { headers: { "x-goog-api-key": apiKey.trim() } });
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data?.error?.message || "Falha ao listar modelos Gemini (HTTP " + response.status + ").");
   return (data?.models || []).filter((m: any) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.some((method: string) => /generateContent/i.test(method))).map((m: any) => ({ id: String(m.name || "").replace(/^models\//, ""), name: String(m.displayName || m.name || "") })).filter((m: AIModelOption) => m.id);
@@ -174,9 +174,9 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
   let lastMessage = "";
 
   for (const model of geminiModels) {
-    response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(apiKey.trim()), {
+    response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey.trim() },
       body: JSON.stringify({
         contents: [{ role: "user", parts: [{ text: prompt }] }],
         generationConfig: { temperature: 0.15, responseMimeType: "application/json" },
