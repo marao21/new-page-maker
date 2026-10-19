@@ -103,6 +103,18 @@ function LovableRpDemo() {
   );
 
   useEffect(() => {
+    const oauthResult = new URLSearchParams(window.location.search).get("supabase_oauth");
+    if (oauthResult) {
+      const messages: Record<string, string> = {
+        connected: "Supabase Management API autorizada. O token está guardado em cookie protegido do servidor.",
+        not_configured: "Falta configurar SUPABASE_OAUTH_CLIENT_ID e SUPABASE_OAUTH_CLIENT_SECRET no servidor e registrar o OAuth App no painel Supabase.",
+        denied: "A autorização do Supabase foi cancelada ou negada.",
+        invalid_state: "A validação de segurança do OAuth falhou. Tente conectar novamente.",
+        token_exchange_failed: "O Supabase retornou, mas a troca do código por token falhou. Confira Client ID, segredo e URL de retorno.",
+      };
+      setNotice(messages[oauthResult] || "Não foi possível concluir a autorização do Supabase.");
+      window.history.replaceState({}, "", window.location.pathname);
+    }
     let active = true;
     async function restoreConnections() {
       const token = window.sessionStorage.getItem("lovable-rp-web-github-token") || "";
@@ -572,8 +584,8 @@ function LovableRpDemo() {
                       <div className="rounded-xl border border-slate-200 p-4">
                         <div className="flex items-center gap-2"><DatabaseIcon className="h-5 w-5 text-emerald-600" /><h4 className="text-sm font-bold">Supabase Management API</h4><span className="ml-auto rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">Configuração necessária</span></div>
                         <p className="mt-4 text-xs leading-5 text-slate-500">Conecte sua conta Supabase para autorizar o Lovable RP a acessar e modificar apenas os projetos e recursos permitidos pelas permissões que você aprovar.</p>
-                        <button onClick={() => { const clientId = (import.meta as any).env?.VITE_SUPABASE_OAUTH_CLIENT_ID as string | undefined; if (!clientId) { setNotice("O OAuth do Supabase ainda precisa ser registrado uma vez. Abra Configurações da organização → OAuth Apps no Supabase, crie o app Lovable RP e configure VITE_SUPABASE_OAUTH_CLIENT_ID, VITE_SUPABASE_OAUTH_REDIRECT_URI e o segredo no servidor antes de autorizar."); window.open("https://supabase.com/dashboard", "_blank", "noopener,noreferrer"); return; } const redirectUri = ((import.meta as any).env?.VITE_SUPABASE_OAUTH_REDIRECT_URI as string | undefined) || (window.location.origin + "/api/supabase/oauth/callback"); const state = crypto.randomUUID(); window.sessionStorage.setItem("lovable-rp-supabase-oauth-state", state); const url = new URL("https://api.supabase.com/v1/oauth/authorize"); url.searchParams.set("client_id", clientId); url.searchParams.set("response_type", "code"); url.searchParams.set("redirect_uri", redirectUri); url.searchParams.set("state", state); window.location.href = url.toString(); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-700"><DatabaseIcon className="h-4 w-4" />Conectar Supabase<ArrowRight className="h-4 w-4" /></button>
-                        <p className="mt-2 text-[11px] leading-5 text-slate-500">A tela oficial de consentimento só abrirá depois que o OAuth App e a URL de retorno forem configurados.</p>
+                        <button onClick={() => { window.location.href = "/api/supabase/oauth/start"; }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 text-sm font-bold text-white hover:bg-emerald-700"><DatabaseIcon className="h-4 w-4" />Conectar Supabase<ArrowRight className="h-4 w-4" /></button>
+                        <p className="mt-2 text-[11px] leading-5 text-slate-500">O botão inicia o OAuth no servidor. Para concluir, cadastre o aplicativo Lovable RP no Supabase e configure as variáveis secretas do servidor.</p>
                       </div>
                       <div className="rounded-xl border border-slate-200 p-4">
                         <div className="flex items-center gap-2"><Sparkles className="h-5 w-5 text-pink-600" /><h4 className="text-sm font-bold">Gemini API</h4>{geminiApiKey && <span className="ml-auto rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Chave informada</span>}</div>
