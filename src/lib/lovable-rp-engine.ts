@@ -169,7 +169,7 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
     catch { throw new Error("A resposta da OpenAI não veio em JSON válido. Tente novamente."); }
   }
 
-  const geminiModels = selectedModel ? [selectedModel] : [GEMINI_MODEL, "gemini-2.5-flash-lite"];
+  // Se o modelo selecionado estiver temporariamente sobrecarregado, tente automaticamente outros modelos de texto compatíveis.\n  const geminiFallbacks = [GEMINI_MODEL, "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest"];\n  const geminiModels = [...new Set([selectedModel, ...geminiFallbacks].filter((model): model is string => !!model))];
   let lastStatus = 0;
   let lastMessage = "";
 
@@ -191,11 +191,11 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
     }
     lastStatus = response.status;
     lastMessage = data?.error?.message || "Gemini HTTP " + response.status;
-    if (response.status === 429 || response.status === 503) continue;
+    if (response.status === 429 || response.status === 500 || response.status === 502 || response.status === 503 || response.status === 504) continue;
     if (response.status === 401 || response.status === 403) throw new Error("A chave Gemini foi recusada: " + lastMessage);
     throw new Error("Erro da API Gemini (HTTP " + response.status + "): " + lastMessage);
   }
-  throw new Error("Os modelos Gemini selecionados estão indisponíveis (HTTP " + lastStatus + "): " + lastMessage);
+  throw new Error("O Gemini está temporariamente indisponível em todos os modelos tentados (HTTP " + lastStatus + "): " + lastMessage + " Aguarde um pouco ou escolha outro modelo nas configurações.");
 }
 
 function isAllowedTextPath(path: string, size = 0) {
