@@ -162,7 +162,6 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
         ? data.output.flatMap((item: any) => Array.isArray(item?.content) ? item.content : []).filter((part: any) => part?.type === "output_text").map((part: any) => part.text || "").join("")
         : "";
     if (!outputText.trim()) throw new Error("A OpenAI não retornou texto. Tente novamente.");
-    if (provider === "openrouter") return outputText;
     try { return JSON.parse(outputText.replace(/^\\uFEFF/, "").replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```\\s*$/, "")); }
     catch { throw new Error("A resposta da OpenAI não veio em JSON válido. Tente novamente."); }
   }
@@ -250,7 +249,9 @@ export async function executeGitHubEdit(args: {
   githubToken: string;
   geminiApiKey?: string;
   openaiApiKey?: string;
+  openrouterApiKey?: string;
   aiProvider?: AIProvider;
+  aiModel?: string;
   repository: string;
   branch: string;
   request: string;
