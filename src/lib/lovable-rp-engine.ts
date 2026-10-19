@@ -10,7 +10,7 @@ type TreeEntry = { path: string; type: string; size?: number; sha: string };
 type Change = { path: string; content: string };
 
 const GITHUB_API = "https://api.github.com";
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-3.8-flash";
 const OPENAI_MODEL = "openai/gpt-4.1-mini";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type AIProvider = "gemini" | "openai" | "openrouter";
@@ -59,7 +59,10 @@ export async function validateGitHubToken(token: string) {
 
 export async function validateGeminiApiKey(apiKey: string) {
   if (!apiKey.trim()) throw new Error("Informe uma chave da API Gemini.");
-  await callAI("gemini", apiKey, 'Responda somente JSON: {"ok":true,"message":"conectado"}.');
+  const models = await listGeminiModels(apiKey);
+  const preferred = models.find((model) => /gemini-3\.8-flash/i.test(model.id)) || models.find((model) => /flash/i.test(model.id)) || models[0];
+  if (!preferred) throw new Error("A chave foi aceita, mas não há modelos Gemini compatíveis com geração de texto.");
+  await callAI("gemini", apiKey, 'Responda somente JSON: {"ok":true,"message":"conectado"}.', preferred.id);
   return true;
 }
 
