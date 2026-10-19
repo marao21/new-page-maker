@@ -10,7 +10,7 @@ type TreeEntry = { path: string; type: string; size?: number; sha: string };
 type Change = { path: string; content: string };
 
 const GITHUB_API = "https://api.github.com";
-const GEMINI_MODEL = "gemini-3.8-flash";
+const GEMINI_MODEL = "gemini-2.5-flash";
 const OPENAI_MODEL = "openai/gpt-4.1-mini";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
 export type AIProvider = "gemini" | "openai" | "openrouter";
@@ -166,56 +166,33 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
     catch { throw new Error("A resposta da OpenAI não veio em JSON válido. Tente novamente."); }
   }
 
-  const geminiModels = selectedModel ? [selectedModel] : [GEMINI_MODEL, "gemini-3.7-flash", "gemini-3.6-flash"];
+  const geminiModels = selectedModel ? [selectedModel] : [GEMINI_MODEL, "gemini-2.5-flash-lite"];
   let lastStatus = 0;
   let lastMessage = "";
-  let text = "";
 
   for (const model of geminiModels) {
-    response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+    response = await fetch("https://generativelanguage.googleapis.com/v1beta/models/" + encodeURIComponent(model) + ":generateContent?key=" + encodeURIComponent(apiKey.trim()), {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "x-goog-api-key": apiKey.trim(),
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        model,
-        input: prompt,
-        generation_config: {
-          temperature: 0.15,
-          thinking_level: "medium",
-        },
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.15, responseMimeType: "application/json" },
       }),
     });
     data = await response.json().catch(() => ({}));
     if (response.ok) {
-      text = typeof data?.output_text === "string"
-        ? data.output_text
-        : Array.isArray(data?.outputs)
-          ? data.outputs.flatMap((item: any) => Array.isArray(item?.content) ? item.content : []).map((part: any) => part?.text || "").join("")
-          : "";
-      if (!text.trim()) throw new Error(`O Gemini (${model}) não retornou texto. Tente novamente com um pedido mais específico.`);
-      try { return JSON.parse(text.replace(/^\\uFEFF/, "").replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```\\s*$/, "")); }
-      catch { throw new Error(`A resposta do Gemini (${model}) não veio em JSON válido. Tente novamente.`); }
+      const text = (data?.candidates?.[0]?.content?.parts || []).map((part: any) => part?.text || "").join("");
+      if (!text.trim()) throw new Error("O Gemini (" + model + ") não retornou texto.");
+      try { return JSON.parse(text.replace(/^\\uFEFF/, "").replace(/^\\s*\`\`\`(?:json)?\\s*/i, "").replace(/\\s*\`\`\`\\s*$/, "")); }
+      catch { throw new Error("A resposta do Gemini (" + model + ") não veio em JSON válido."); }
     }
-
     lastStatus = response.status;
-    lastMessage = data?.error?.message || data?.message || `Gemini HTTP ${response.status}`;
-
-    // Try the next stable model only for temporary capacity or rate-limit failures.
-    if (response.status === 503 || response.status === 429 || /high demand|overloaded|temporarily unavailable|resource exhausted/i.test(lastMessage)) {
-      continue;
-    }
-    if (response.status === 401 || response.status === 403) {
-      throw new Error(`A chave Gemini foi recusada (HTTP ${response.status}): ${lastMessage}`);
-    }
-    throw new Error(`Erro da API Gemini (HTTP ${response.status}): ${lastMessage}`);
+    lastMessage = data?.error?.message || "Gemini HTTP " + response.status;
+    if (response.status === 429 || response.status === 503) continue;
+    if (response.status === 401 || response.status === 403) throw new Error("A chave Gemini foi recusada: " + lastMessage);
+    throw new Error("Erro da API Gemini (HTTP " + response.status + "): " + lastMessage);
   }
-
-  if (lastStatus === 429) {
-    throw new Error(`Todos os modelos Gemini alternativos atingiram o limite ou a cota (HTTP 429). Confira as cotas no Google AI Studio. Detalhe: ${lastMessage}`);
-  }
-  throw new Error(`Os modelos Gemini alternativos estão indisponíveis no momento (HTTP ${lastStatus}). Tentamos ${geminiModels.join(", ")}. Aguarde um pouco e tente novamente. Detalhe: ${lastMessage}`);
+  throw new Error("Os modelos Gemini selecionados estão indisponíveis (HTTP " + lastStatus + "): " + lastMessage);
 }
 
 function isAllowedTextPath(path: string, size = 0) {
