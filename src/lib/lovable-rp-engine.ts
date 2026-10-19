@@ -42,10 +42,22 @@ async function githubRequest<T>(token: string, path: string, init: RequestInit =
   let data: any = null;
   try { data = raw ? JSON.parse(raw) : null; } catch { data = raw; }
   if (!response.ok) {
-    const detail = data?.message || `GitHub HTTP ${response.status}`;
-    if (response.status === 401) throw new Error("Token do GitHub inválido ou expirado.");
-    if (response.status === 403) throw new Error("O GitHub negou o acesso. Confira as permissões do token e o limite de requisições.");
-    if (response.status === 404) throw new Error("Repositório, branch ou arquivo não encontrado. Confira o acesso e o nome informado.");
+    const detail = String(data?.message || `GitHub HTTP ${response.status}`);
+    if (response.status === 401) throw new Error("A autorização do GitHub expirou ou foi recusada. Vá em Conexões, desconecte e conecte o GitHub novamente.");
+    if (response.status === 403) {
+      const remaining = response.headers.get("x-ratelimit-remaining");
+      const scopes = response.headers.get("x-oauth-scopes");
+      if (remaining === "0") throw new Error("O limite de requisições da API do GitHub foi atingido. Aguarde a renovação do limite e tente novamente.");
+      if (/rate limit/i.test(detail)) throw new Error("O GitHub limitou temporariamente as requisições. Aguarde alguns minutos e tente novamente. Detalhe: " + detail);
+      if (/resource not accessible by integration|insufficient permissions/i.test(detail)) throw new Error("A autorização atual do GitHub não tem permissão para esta operação. Reconecte o GitHub e autorize o escopo repo; se for uma organização, o administrador pode precisar aprovar o aplicativo. Detalhe: " + detail);
+      if (/name already exists|already exists/i.test(detail)) throw new Error("Já existe um repositório com esse nome na sua conta. Escolha outro nome. Detalhe: " + detail);
+      throw new Error("O GitHub recusou a operação (HTTP 403). " + detail + (scopes ? " Escopos autorizados: " + scopes + "." : " Verifique se o OAuth App tem o escopo repo e se há políticas da organização bloqueando a criação."));
+    }
+    if (response.status === 404) throw new Error("Repositório, branch ou arquivo não encontrado. Confira o acesso e o nome informado. Detalhe: " + detail);
+    if (response.status === 422) {
+      if (/already exists|name already exists/i.test(detail)) throw new Error("Já existe um repositório com esse nome. Troque o nome e tente novamente.");
+      throw new Error("O GitHub não aceitou os dados enviados (HTTP 422). " + detail);
+    }
     throw new Error(detail);
   }
   return data as T;
