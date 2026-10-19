@@ -219,7 +219,7 @@ function pathRelevance(path: string, request: string) {
 
 function parseJsonResponse<T>(value: unknown, label: string): T {
   if (typeof value === "string") {
-    const cleaned = value.replace(/^\\uFEFF/, "").replace(/^\\s*` ` `(?:json)?\\s*/i, "").replace(/\\s*` ` `\\s*$/, "").trim();
+    const cleaned = value.replace(/^\\uFEFF/, "").replace(/^\\s*[\\x60]{3}(?:json)?\\s*/i, "").replace(/\\s*[\\x60]{3}\\s*$/, "").trim();
     try { value = JSON.parse(cleaned); } catch { throw new Error(`A IA retornou ${label} sem JSON válido.`); }
   }
   if (!value || typeof value !== "object") throw new Error(`A IA retornou ${label} em formato inválido.`);
