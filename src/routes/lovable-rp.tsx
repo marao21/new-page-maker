@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { isSupabaseConfigured, supabase } from "../integrations/supabase/client";
 import { LocalPreviewBuilder } from "../components/local-preview-builder";
-import { executeGitHubEdit, listGitHubRepositories, validateGeminiApiKey, validateOpenAIApiKey, validateGitHubToken, type GitHubRepoOption } from "../lib/lovable-rp-engine";
+import { executeGitHubEdit, listGitHubRepositories, listGeminiModels, listOpenAIModels, listOpenRouterModels, validateGeminiApiKey, validateOpenAIApiKey, validateGitHubToken, type AIModelOption, type AIProvider, type GitHubRepoOption } from "../lib/lovable-rp-engine";
 import {
   Activity,
   ArrowRight,
@@ -86,6 +86,14 @@ function LovableRpDemo() {
   const [githubToken, setGithubToken] = useState("");
   const [geminiApiKey, setGeminiApiKey] = useState("");
   const [openaiApiKey, setOpenaiApiKey] = useState("");
+  const [openrouterApiKey, setOpenrouterApiKey] = useState("");
+  const [aiProvider, setAiProvider] = useState<AIProvider>("gemini");
+  const [aiModel, setAiModel] = useState("gemini-2.5-flash");
+  const [geminiModels, setGeminiModels] = useState<AIModelOption[]>([]);
+  const [openaiModels, setOpenaiModels] = useState<AIModelOption[]>([]);
+  const [openrouterModels, setOpenrouterModels] = useState<AIModelOption[]>([]);
+  const [testingOpenRouter, setTestingOpenRouter] = useState(false);
+  const [openrouterConnected, setOpenrouterConnected] = useState(false);
   const [githubUser, setGithubUser] = useState("");
   const [repoOptions, setRepoOptions] = useState<GitHubRepoOption[]>([]);
   const [selectedRepository, setSelectedRepository] = useState("marao21/new-page-maker");
@@ -129,8 +137,12 @@ function LovableRpDemo() {
       setGithubUser(window.sessionStorage.getItem("lovable-rp-web-github-user") || "");
       setGeminiApiKey(window.sessionStorage.getItem("lovable-rp-web-gemini-key") || "");
       setOpenaiApiKey(window.sessionStorage.getItem("lovable-rp-web-openai-key") || "");
+      setOpenrouterApiKey(window.sessionStorage.getItem("lovable-rp-web-openrouter-key") || "");
+      setAiProvider((window.sessionStorage.getItem("lovable-rp-web-ai-provider") as AIProvider) || "gemini");
+      setAiModel(window.sessionStorage.getItem("lovable-rp-web-ai-model") || "gemini-2.5-flash");
       setOpenaiConnected(!!window.sessionStorage.getItem("lovable-rp-web-openai-key"));
       setGeminiConnected(!!window.sessionStorage.getItem("lovable-rp-web-gemini-key"));
+      setOpenrouterConnected(!!window.sessionStorage.getItem("lovable-rp-web-openrouter-key"));
       setSelectedRepository(window.sessionStorage.getItem("lovable-rp-web-repository") || "marao21/new-page-maker");
       setSelectedBranch(window.sessionStorage.getItem("lovable-rp-web-branch") || "main");
       const savedPreview = window.sessionStorage.getItem("lovable-rp-web-preview-url") || "";
@@ -383,6 +395,24 @@ function LovableRpDemo() {
     } finally { setTestingOpenAI(false); }
   }
 
+
+  async function handleTestOpenRouter() {
+    if (!openrouterApiKey.trim()) { setNotice("Cole sua chave da API OpenRouter."); return; }
+    setTestingOpenRouter(true);
+    try {
+      const models = await listOpenRouterModels(openrouterApiKey);
+      if (!models.length) throw new Error("Nenhum modelo de texto foi encontrado nessa conta OpenRouter.");
+      setOpenrouterModels(models);
+      setAiModel(models[0].id);
+      setOpenrouterConnected(true);
+      window.sessionStorage.setItem("lovable-rp-web-openrouter-key", openrouterApiKey.trim());
+      setNotice("OpenRouter conectado. Escolha o modelo na lista abaixo.");
+    } catch (error) {
+      setOpenrouterConnected(false);
+      setNotice(error instanceof Error ? error.message : "Não foi possível carregar os modelos OpenRouter.");
+    } finally { setTestingOpenRouter(false); }
+  }
+
   async function executeCommand() {
     const prompt = commandText.trim();
     if (!prompt) { setNotice("Escreva o que você deseja alterar no projeto."); return; }
@@ -398,7 +428,7 @@ function LovableRpDemo() {
     setNotice("");
     try {
       const result = await executeGitHubEdit({
-        githubToken, geminiApiKey: useOpenAI ? undefined : geminiApiKey, openaiApiKey: useOpenAI ? openaiApiKey : undefined, aiProvider: useOpenAI ? "openai" : "gemini", repository: selectedRepository, branch: selectedBranch, request: prompt,
+        githubToken, geminiApiKey, openaiApiKey, openrouterApiKey, aiProvider, aiModel, repository: selectedRepository, branch: selectedBranch, request: prompt,
         onProgress: setExecutionProgress,
       });
       let savedToDatabase = false;
@@ -654,6 +684,21 @@ function LovableRpDemo() {
                         <input id="rp-openai-key" type="password" autoComplete="off" value={openaiApiKey} onChange={(event) => { setOpenaiApiKey(event.target.value); setOpenaiConnected(false); }} placeholder="sk-..." className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
                         <p className="mt-2 text-[11px] leading-5 text-slate-500">Alternativa ao Gemini. A API OpenAI tem cobrança separada da assinatura do ChatGPT. O site escolhe automaticamente OpenAI quando ela estiver conectada; caso contrário, usa Gemini.</p>
                         <button onClick={handleTestOpenAI} disabled={testingOpenAI} className="mt-3 w-full rounded-xl bg-emerald-700 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-60">{testingOpenAI ? "Testando chave..." : "Conectar e testar OpenAI"}</button>
+                      </div>
+
+                      <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-4 sm:col-span-2">
+                        <div className="flex items-center gap-2"><Bot className="h-5 w-5 text-violet-700" /><h4 className="text-sm font-bold">OpenRouter — catálogo de modelos</h4>{openrouterConnected && <span className="ml-auto rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-700">Conectado</span>}</div>
+                        <label htmlFor="rp-openrouter-key" className="mt-3 block text-xs font-semibold text-slate-600">Chave da API OpenRouter</label>
+                        <input id="rp-openrouter-key" type="password" autoComplete="off" value={openrouterApiKey} onChange={(event) => { setOpenrouterApiKey(event.target.value); setOpenrouterConnected(false); }} placeholder="sk-or-v1-..." className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-400" />
+                        <p className="mt-2 text-[11px] text-slate-500">Carrega os modelos disponíveis na API OpenRouter. O modelo escolhido será usado nas edições do GitHub.</p>
+                        <button onClick={handleTestOpenRouter} disabled={testingOpenRouter} className="mt-3 w-full rounded-xl bg-violet-700 px-3 py-2.5 text-xs font-bold text-white disabled:opacity-60">{testingOpenRouter ? "Carregando modelos..." : "Conectar e carregar modelos"}</button>
+                      </div>
+                      <div className="rounded-xl border border-slate-200 p-4 sm:col-span-2">
+                        <h4 className="text-sm font-bold">Provedor e modelo usados nas edições</h4>
+                        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                          <div><label htmlFor="rp-ai-provider" className="block text-xs font-semibold text-slate-600">Provedor de IA</label><select id="rp-ai-provider" value={aiProvider} onChange={(event) => { const value = event.target.value as AIProvider; setAiProvider(value); window.sessionStorage.setItem("lovable-rp-web-ai-provider", value); const list = value === "openai" ? openaiModels : value === "openrouter" ? openrouterModels : geminiModels; if (list.length) setAiModel(list[0].id); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"><option value="gemini">Google Gemini</option><option value="openai">OpenAI API (GPT)</option><option value="openrouter">OpenRouter (vários modelos)</option></select></div>
+                          <div><label htmlFor="rp-ai-model" className="block text-xs font-semibold text-slate-600">Modelo</label><select id="rp-ai-model" value={aiModel} onChange={(event) => { setAiModel(event.target.value); window.sessionStorage.setItem("lovable-rp-web-ai-model", event.target.value); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"><option value={aiModel}>{aiModel}</option>{(aiProvider === "openai" ? openaiModels : aiProvider === "openrouter" ? openrouterModels : geminiModels).filter((model) => model.id !== aiModel).map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><p className="mt-1 text-[11px] text-slate-500">A lista vem da API do provedor depois de conectar a chave.</p></div>
+                        </div>
                       </div>
                       <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 sm:col-span-2">
                         <div className="flex items-center gap-2"><MessageSquareText className="h-5 w-5 text-emerald-700" /><h4 className="text-sm font-bold">IA própria de cada usuário</h4><span className="ml-auto rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-bold text-emerald-800">Configuração individual</span></div>
