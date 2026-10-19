@@ -596,7 +596,7 @@ function LovableRpDemo() {
           <div className="mx-auto max-w-[1440px] p-4 sm:p-7 lg:p-9">
             <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
               <div><p className="mb-2 text-sm font-medium text-pink-600">Olá, Mário 👋</p><h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">O que vamos construir hoje?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{activeDescription}</p></div>
-              <button onClick={() => { setActiveNav("Conexões"); setNotice(signedInEmail ? "Conecte o GitHub na área de conexões para configurar repositórios." : "Entre na sua conta para gerenciar seu espaço de trabalho."); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-200 transition hover:bg-slate-700"><Plus className="h-4 w-4" /> Novo projeto</button>
+              <button onClick={() => { setCommandMode("new"); setCommandText(""); setNewProjectName("meu-novo-projeto"); setActiveNav("Comandos"); setAssistantReply(null); setNotice(githubToken && (aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "Descreva o projeto que deseja criar do zero." : "Antes de criar, conecte o GitHub e teste o provedor de IA em Conexões."); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-200 transition hover:bg-slate-700"><Plus className="h-4 w-4" /> Novo projeto</button>
             </div>
 
             <section hidden={activeNav !== "Visão geral" && activeNav !== "Comandos"} className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-br from-[#24152f] via-[#3b1740] to-[#6d174e] p-5 text-white shadow-xl shadow-pink-100 sm:p-8">
@@ -650,7 +650,22 @@ function LovableRpDemo() {
                         <button onClick={() => { if (project.repository_full_name) { setSelectedRepository(project.repository_full_name); setSelectedBranch(project.branch || "main"); window.sessionStorage.setItem("lovable-rp-web-repository", project.repository_full_name); window.sessionStorage.setItem("lovable-rp-web-branch", project.branch || "main"); setNotice("Repositório selecionado para a próxima execução."); } else { setNotice("Conecte o GitHub e selecione um repositório."); setActiveNav("Conexões"); } }} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold hover:bg-slate-50">Selecionar</button>
                       </div>
                     ))}
-                    {databaseStatus === "Supabase conectado" && projects.length === 0 && <p className="py-6 text-center text-sm text-slate-400">Nenhum projeto salvo no banco ainda.</p>}
+                    <div className="mb-4 mt-6 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-5">
+                      <div><h4 className="font-bold">Repositórios do GitHub</h4><p className="mt-1 text-xs text-slate-500">Lista carregada da conta GitHub conectada. Escolha um para editar.</p></div>
+                      {!githubToken && <button onClick={() => setActiveNav("Conexões")} className="rounded-lg bg-pink-600 px-3 py-2 text-xs font-bold text-white">Conectar GitHub</button>}
+                    </div>
+                    {githubToken && repoOptions.length === 0 && <p className="rounded-xl border border-dashed border-slate-200 p-5 text-center text-sm text-slate-500">Nenhum repositório carregado. Abra Conexões e reconecte o GitHub para atualizar a lista.</p>}
+                    {repoOptions.filter((repo) => !projects.some((project) => project.repository_full_name === repo.full_name)).map((repo) => (
+                      <div key={repo.full_name} className="mb-3 flex flex-col gap-3 rounded-xl border border-slate-200 p-4 sm:flex-row sm:items-center">
+                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Github className="h-5 w-5" /></div>
+                        <div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{repo.name}</p><p className="truncate text-xs text-slate-500">{repo.full_name}</p></div>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{repo.private ? "Privado" : "Público"} · {repo.default_branch}</span>
+                        <button onClick={() => { setSelectedRepository(repo.full_name); setSelectedBranch(repo.default_branch || "main"); window.sessionStorage.setItem("lovable-rp-web-repository", repo.full_name); window.sessionStorage.setItem("lovable-rp-web-branch", repo.default_branch || "main"); setCommandMode("edit"); setActiveNav("Comandos"); setCommandText(""); setNotice("Projeto " + repo.full_name + " selecionado. Descreva a alteração que deseja fazer."); }} className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold hover:bg-slate-50">Selecionar para editar</button>
+                        <a href={repo.html_url} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-bold hover:bg-slate-50">Abrir GitHub</a>
+                      </div>
+                    ))}
+                    {databaseStatus === "Supabase conectado" && projects.length === 0 && <p className="py-6 text-center text-sm text-slate-400">Nenhum projeto interno salvo no banco. Os repositórios GitHub aparecem na lista acima.</p>}
+                    <p className="mt-4 text-xs leading-5 text-amber-700">Importante: a lista acima mostra repositórios do GitHub. Projetos da conta Supabase ainda não são listados automaticamente por esta tela; a conexão de gerenciamento do Supabase precisa estar concluída no servidor para buscar esses projetos.</p>
                   </div>
                 )}
                 {activeNav === "Prévia" && (
