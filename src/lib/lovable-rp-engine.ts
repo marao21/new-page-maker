@@ -218,8 +218,67 @@ function pathRelevance(path: string, request: string) {
 }
 
 function parseJsonResponse<T>(value: unknown, label: string): T {
+  if (typeof value === "string") {
+    const cleaned = value.replace(/^\\uFEFF/, "").replace(/^\\s*` ` `(?:json)?\\s*/i, "").replace(/\\s*` ` `\\s*$/, "").trim();
+    try { value = JSON.parse(cleaned); } catch { throw new Error(`A IA retornou ${label} sem JSON válido.`); }
+  }
   if (!value || typeof value !== "object") throw new Error(`A IA retornou ${label} em formato inválido.`);
   return value as T;
+}
+
+
+export async function createGitHubProject(args: {
+  githubToken: string;
+  aiProvider: AIProvider;
+  aiModel: string;
+  geminiApiKey?: string;
+  openaiApiKey?: string;
+  openrouterApiKey?: string;
+  projectName: string;
+  request: string;
+  onProgress?: (message: string) => void;
+}) {
+  const token = args.githubToken.trim();
+  const provider = args.aiProvider;
+  const apiKey = ((provider === "openai" ? args.openaiApiKey : provider === "openrouter" ? args.openrouterApiKey : args.geminiApiKey) || "").trim();
+  if (!token) throw new Error("Conecte o GitHub antes de criar um projeto.");
+  if (!apiKey) throw new Error("Conecte a chave do provedor de IA selecionado.");
+  const progress = args.onProgress || (() => {});
+  const repoName = args.projectName.trim().toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 90);
+  if (!repoName) throw new Error("Informe um nome válido para o projeto.");
+  progress("A IA está planejando o projeto e decidindo se precisa de banco de dados...");
+  const plan = parseJsonResponse<{ needsSupabase: boolean; reason: string; description: string; files: Array<{path:string;content:string}>; summary: string }>(
+    await callAI(provider, apiKey, [
+      "Você é um agente que cria projetos web completos do zero.",
+      "Responda apenas JSON válido: {\\"needsSupabase\\":boolean,\\"reason\\":string,\\"description\\":string,\\"summary\\":string,\\"files\\":[{\\"path\\":string,\\"content\\":string}]}",
+      "Decida com critério: páginas estáticas, landing pages e sites institucionais simples normalmente NÃO precisam de Supabase. Login, dados persistentes, painel, marketplace, cadastro, pedidos ou banco de dados normalmente precisam. Não adicione chaves secretas. Gere arquivos completos, no máximo 20 arquivos e 180000 caracteres por arquivo. Gere um projeto Vite + React + TypeScript funcional com package.json, index.html, src/main.tsx, src/App.tsx e src/index.css. Se precisar de Supabase, inclua a dependência e integração por variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY, mas não invente credenciais nem suponha que o projeto Supabase já existe.",
+      "NOME DO REPOSITÓRIO: " + repoName,
+      "PEDIDO DO USUÁRIO: " + args.request,
+    ].join("\\n\\n"), args.aiModel),
+    "o plano do novo projeto"
+  );
+  if (!Array.isArray(plan.files) || !plan.files.length) throw new Error("A IA não retornou os arquivos do novo projeto.");
+  if (plan.files.length > 20) throw new Error("O projeto retornou arquivos demais. Reduza o escopo e tente novamente.");
+  progress("Criando repositório " + repoName + " no GitHub...");
+  const repo = await githubRequest<any>(token, "/user/repos", {
+    method: "POST",
+    body: JSON.stringify({ name: repoName, description: String(plan.description || args.request).slice(0, 300), private: true, auto_init: true }),
+  });
+  const fullName = String(repo.full_name);
+  const branch = String(repo.default_branch || "main");
+  const ref = await githubRequest<any>(token, "/repos/" + fullName + "/git/ref/heads/" + encodeURIComponent(branch));
+  const parent = await githubRequest<any>(token, "/repos/" + fullName + "/git/commits/" + ref.object.sha);
+  const files = plan.files.filter((file) => file && typeof file.path === "string" && typeof file.content === "string" && file.path.length < 240 && !file.path.startsWith("/") && !file.path.split("/").includes(".."));
+  if (!files.length) throw new Error("A IA não gerou arquivos seguros para gravar.");
+  progress("Gravando " + files.length + " arquivos iniciais no novo repositório...");
+  const blobs = await Promise.all(files.map(async (file) => {
+    const blob = await githubRequest<any>(token, "/repos/" + fullName + "/git/blobs", { method: "POST", body: JSON.stringify({ content: file.content, encoding: "utf-8" }) });
+    return { path: file.path, mode: "100644", type: "blob", sha: blob.sha };
+  }));
+  const tree = await githubRequest<any>(token, "/repos/" + fullName + "/git/trees", { method: "POST", body: JSON.stringify({ base_tree: parent.tree.sha, tree: blobs }) });
+  const commit = await githubRequest<any>(token, "/repos/" + fullName + "/git/commits", { method: "POST", body: JSON.stringify({ message: "feat: scaffold new project", tree: tree.sha, parents: [ref.object.sha] }) });
+  await githubRequest<any>(token, "/repos/" + fullName + "/git/refs/heads/" + encodeURIComponent(branch), { method: "PATCH", body: JSON.stringify({ sha: commit.sha, force: false }) });
+  return { repository: fullName, branch, commitSha: commit.sha, commitUrl: "https://github.com/" + fullName + "/commit/" + commit.sha, repoUrl: String(repo.html_url), summary: String(plan.summary || "Projeto inicial criado."), files: files.map((file) => file.path), needsSupabase: !!plan.needsSupabase, supabaseReason: String(plan.reason || "") };
 }
 
 export async function executeGitHubEdit(args: {
