@@ -103,13 +103,32 @@ function LovableRpDemo() {
   );
 
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      setGithubToken(window.sessionStorage.getItem("lovable-rp-web-github-token") || "");
+    let active = true;
+    async function restoreConnections() {
+      const token = window.sessionStorage.getItem("lovable-rp-web-github-token") || "";
+      setGithubToken(token);
       setGithubUser(window.sessionStorage.getItem("lovable-rp-web-github-user") || "");
       setGeminiApiKey(window.sessionStorage.getItem("lovable-rp-web-gemini-key") || "");
       setSelectedRepository(window.sessionStorage.getItem("lovable-rp-web-repository") || "marao21/new-page-maker");
       setSelectedBranch(window.sessionStorage.getItem("lovable-rp-web-branch") || "main");
+      if (!token) return;
+      try {
+        const repos = await listGitHubRepositories(token);
+        if (!active) return;
+        setRepoOptions(repos);
+        const savedRepo = window.sessionStorage.getItem("lovable-rp-web-repository") || "";
+        if (savedRepo && repos.some((repo) => repo.full_name === savedRepo)) {
+          setSelectedRepository(savedRepo);
+        } else if (repos[0]) {
+          setSelectedRepository(repos[0].full_name);
+          setSelectedBranch(repos[0].default_branch || "main");
+        }
+      } catch {
+        if (active) setNotice("A sessão do GitHub foi encontrada, mas não consegui carregar os repositórios. Clique em Conectar GitHub para autorizar novamente.");
+      }
     }
+    void restoreConnections();
+    return () => { active = false; };
   }, []);
 
   useEffect(() => {
@@ -559,7 +578,7 @@ function LovableRpDemo() {
                       </div>
                     </div>
                     <div className="mt-4 grid gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4 sm:grid-cols-2">
-                      <div><label htmlFor="rp-repository" className="block text-xs font-semibold text-slate-600">Repositório GitHub</label><input id="rp-repository" list="lovable-rp-repositories" value={selectedRepository} onChange={(event) => { setSelectedRepository(event.target.value); window.sessionStorage.setItem("lovable-rp-web-repository", event.target.value); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-pink-400" /><datalist id="lovable-rp-repositories">{repoOptions.map((repo) => <option key={repo.full_name} value={repo.full_name}>{repo.private ? "Privado" : "Público"}</option>)}</datalist></div>
+                      <div><label htmlFor="rp-repository" className="block text-xs font-semibold text-slate-600">Repositório GitHub</label><select id="rp-repository" value={selectedRepository} onChange={(event) => { const repo = repoOptions.find((item) => item.full_name === event.target.value); setSelectedRepository(event.target.value); if (repo?.default_branch) setSelectedBranch(repo.default_branch); window.sessionStorage.setItem("lovable-rp-web-repository", event.target.value); if (repo?.default_branch) window.sessionStorage.setItem("lovable-rp-web-branch", repo.default_branch); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-pink-400"><option value="">{githubUser ? (repoOptions.length ? "Selecione um repositório" : "Nenhum repositório carregado") : "Conecte o GitHub primeiro"}</option>{repoOptions.map((repo) => <option key={repo.full_name} value={repo.full_name}>{repo.full_name}{repo.private ? " · Privado" : " · Público"}</option>)}</select><p className="mt-1 text-[11px] text-slate-500">{repoOptions.length ? `${repoOptions.length} repositório(s) disponível(is)` : "A lista aparece depois que o GitHub estiver conectado."}</p></div>
                       <div><label htmlFor="rp-branch" className="block text-xs font-semibold text-slate-600">Branch de destino</label><input id="rp-branch" value={selectedBranch} onChange={(event) => { setSelectedBranch(event.target.value); window.sessionStorage.setItem("lovable-rp-web-branch", event.target.value); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-pink-400" /></div>
                     </div>
                     <p className="mt-3 rounded-xl bg-amber-50 p-3 text-xs leading-5 text-amber-800">Segurança: os tokens ficam temporariamente no sessionStorage desta aba, não no banco. Use somente em ambiente confiável e remova a sessão ao terminar. A execução cria um commit GitHub; revise sempre os arquivos antes de publicar.</p>
