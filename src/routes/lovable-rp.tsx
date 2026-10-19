@@ -461,8 +461,13 @@ function LovableRpDemo() {
     if (!prompt) { setNotice("Descreva o projeto ou a alteração que deseja."); return; }
     const aiConnected = aiProvider === "openai" ? !!openaiApiKey.trim() && openaiConnected : aiProvider === "openrouter" ? !!openrouterApiKey.trim() && openrouterConnected : !!geminiApiKey.trim() && geminiConnected;
     if (!githubToken.trim() || !aiConnected) {
-      setNotice("Conecte o GitHub e teste o provedor de IA selecionado.");
+      setNotice(!githubToken.trim() ? "Conecte o GitHub antes de criar ou editar. A criação do zero não exige selecionar um repositório existente." : "Conecte e teste o provedor de IA selecionado antes de executar.");
       setActiveNav("Conexões");
+      return;
+    }
+    if (commandMode === "edit" && (!selectedRepository.trim() || !selectedBranch.trim())) {
+      setNotice("Para editar, selecione um repositório e uma branch. Para criar do zero, escolha ‘Criar projeto do zero’.");
+      setActiveNav("Projetos");
       return;
     }
     setExecuting(true);
@@ -829,7 +834,7 @@ function LovableRpDemo() {
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-100/60">
                   <div className="flex items-center justify-between"><div><h3 className="font-bold">Projeto conectado</h3><p className="mt-1 text-xs text-slate-500">Estado real da conexão</p></div><button onClick={() => setActiveNav("Projetos")} aria-label="Ver projetos" className="rounded-lg p-2 text-slate-400 hover:bg-slate-100"><MoreHorizontal className="h-5 w-5" /></button></div>
                   <div className="mt-5 rounded-xl border border-slate-200 p-4"><div className="flex items-center gap-3"><div className="flex h-10 w-10 items-center justify-center rounded-xl bg-slate-950 text-white"><Github className="h-5 w-5" /></div><div className="min-w-0 flex-1"><p className="truncate text-sm font-bold">{currentProject.name}</p><p className="text-xs text-slate-500">{currentProject.repository_full_name ?? "Repositório não informado"}</p></div><span className="h-2 w-2 rounded-full bg-emerald-500" /></div><div className="mt-4 flex items-center justify-between border-t border-slate-100 pt-3 text-xs"><span className="text-slate-500">Branch principal</span><code className="rounded-md bg-slate-100 px-2 py-1 text-slate-700">{currentProject.branch}</code></div><p className="mt-3 text-[11px] leading-5 text-amber-700">{databaseStatus === "Supabase conectado" ? "Projeto carregado do Supabase. As alterações de código são confirmadas pelo link de commit do GitHub." : selectedRepoOption ? "Repositório carregado do GitHub; o cadastro persistente de projetos depende do Supabase ativo." : "Nenhum repositório confirmado. Conecte o GitHub na aba Conexões para carregar seus projetos reais."}</p></div>
-                  <button onClick={() => { setActiveNav("Projetos"); setNotice(repoOptions.length ? "Selecione o repositório e a branch na aba Conexões." : "Conecte o GitHub para carregar repositórios e branches reais."); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:border-pink-200 hover:bg-pink-50 hover:text-pink-700"><Plus className="h-4 w-4" /> Gerenciar projetos</button>
+                  <button onClick={() => { setActiveNav("Projetos"); setNotice(repoOptions.length ? "Escolha um repositório existente na aba Projetos. Para criar um novo, use Novo projeto e selecione Criar projeto do zero." : "Para editar um projeto existente, conecte o GitHub. Para criar do zero, use Novo projeto e conecte o GitHub e a IA."); }} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-xs font-bold text-slate-700 transition hover:border-pink-200 hover:bg-pink-50 hover:text-pink-700"><Plus className="h-4 w-4" /> Gerenciar projetos</button>
                 </div>
                 <div className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm shadow-slate-100/60">
                   <div className="flex items-center gap-2"><div className="flex h-9 w-9 items-center justify-center rounded-xl bg-violet-50 text-violet-600"><Gauge className="h-4 w-4" /></div><div><h3 className="text-sm font-bold">Status das integrações</h3><p className="text-xs text-slate-500">Conexões para configurar</p></div></div>
