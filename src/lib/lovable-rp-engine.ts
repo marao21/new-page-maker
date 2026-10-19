@@ -13,7 +13,8 @@ const GITHUB_API = "https://api.github.com";
 const GEMINI_MODEL = "gemini-3.8-flash";
 const OPENAI_MODEL = "openai/gpt-4.1-mini";
 const OPENROUTER_BASE_URL = "https://openrouter.ai/api/v1";
-type AIProvider = "gemini" | "openai" | "openrouter";
+export type AIProvider = "gemini" | "openai" | "openrouter";
+export type AIModelOption = { id: string; name: string };
 const MAX_CONTEXT_FILES = 8;
 const MAX_FILE_CHARS = 32000;
 const MAX_PATCH_FILES = 10;
@@ -62,6 +63,32 @@ export async function validateGeminiApiKey(apiKey: string) {
   return true;
 }
 
+export async function listOpenRouterModels(apiKey: string): Promise<AIModelOption[]> {
+  if (!apiKey.trim()) throw new Error("Informe a chave OpenRouter para carregar os modelos.");
+  const response = await fetch(OPENROUTER_BASE_URL + "/models?output_modalities=text", {
+    headers: { Authorization: "Bearer " + apiKey.trim() },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error?.message || "Falha ao listar modelos OpenRouter (HTTP " + response.status + ").");
+  return (data?.data || []).map((m: any) => ({ id: String(m.id), name: String(m.name || m.id) })).filter((m: AIModelOption) => m.id);
+}
+
+export async function listOpenAIModels(apiKey: string): Promise<AIModelOption[]> {
+  if (!apiKey.trim()) throw new Error("Informe a chave OpenAI para carregar os modelos.");
+  const response = await fetch("https://api.openai.com/v1/models", { headers: { Authorization: "Bearer " + apiKey.trim() } });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error?.message || "Falha ao listar modelos OpenAI (HTTP " + response.status + ").");
+  return (data?.data || []).filter((m: any) => /^(gpt-|o[1349]|chatgpt-)/i.test(String(m.id))).map((m: any) => ({ id: String(m.id), name: String(m.id) })).sort((a: AIModelOption, b: AIModelOption) => a.name.localeCompare(b.name));
+}
+
+export async function listGeminiModels(apiKey: string): Promise<AIModelOption[]> {
+  if (!apiKey.trim()) throw new Error("Informe a chave Gemini para carregar os modelos.");
+  const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(apiKey.trim()));
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data?.error?.message || "Falha ao listar modelos Gemini (HTTP " + response.status + ").");
+  return (data?.models || []).filter((m: any) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.some((method: string) => /generateContent|interactions/i.test(method))).map((m: any) => ({ id: String(m.name || "").replace(/^models\//, ""), name: String(m.displayName || m.name || "") })).filter((m: AIModelOption) => m.id);
+}
+
 export async function validateOpenAIApiKey(apiKey: string) {
   if (!apiKey.trim()) throw new Error("Informe uma chave da API OpenAI.");
   await callAI("openai", apiKey, 'Responda somente JSON: {"ok":true,"message":"conectado"}.');
@@ -99,7 +126,7 @@ function encodeBase64Utf8(value: string) {
   return btoa(binary);
 }
 
-async function callAI(provider: AIProvider, apiKey: string, prompt: string) {
+async function callAI(provider: AIProvider, apiKey: string, prompt: string, selectedModel?: string) {
   let response: Response;
   let data: any;
   if (provider === "openai" || provider === "openrouter") {
@@ -231,7 +258,7 @@ export async function executeGitHubEdit(args: {
 }) {
   const token = args.githubToken.trim();
   const provider: AIProvider = args.aiProvider || "gemini";
-  const apiKey = (provider === "openai" ? args.openaiApiKey : args.geminiApiKey || "").trim();
+  const apiKey = (provider === "openai" ? args.openaiApiKey : provider === "openrouter" ? args.openrouterApiKey : args.geminiApiKey || "").trim();
   const repo = safeRepoName(args.repository);
   const branch = args.branch.trim() || "main";
   const request = args.request.trim();
