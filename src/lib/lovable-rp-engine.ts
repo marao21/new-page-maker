@@ -126,29 +126,36 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string) {
     catch { throw new Error("A resposta da OpenAI não veio em JSON válido. Tente novamente."); }
   }
 
-  response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${encodeURIComponent(apiKey.trim())}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.15,
-          responseMimeType: "application/json",
-          maxOutputTokens: 16384,
-        },
-      }),
+  response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "x-goog-api-key": apiKey.trim(),
     },
-  );
+    body: JSON.stringify({
+      model: GEMINI_MODEL,
+      input: prompt,
+      generation_config: {
+        temperature: 0.15,
+        thinking_level: "medium",
+      },
+    }),
+  });
   data = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const message = data?.error?.message || `Gemini HTTP ${response.status}`;
-    if (response.status === 400 || response.status === 403) throw new Error(`Não foi possível usar a chave Gemini: ${message}`);
-    if (response.status === 429) throw new Error("O limite da API Gemini foi atingido. Aguarde ou confira as cotas.");
-    throw new Error(message);
+    const message = data?.error?.message || data?.message || `Gemini HTTP ${response.status}`;
+    if (response.status === 401 || response.status === 403) throw new Error(`Não foi possível usar a chave Gemini: ${message}`);
+    if (response.status === 429) throw new Error("O limite ou a cota da API Gemini foi atingido. Aguarde ou confira as cotas no Google AI Studio.");
+    if (response.status === 503 || /high demand|overloaded|temporarily unavailable/i.test(message)) {
+      throw new Error("O Gemini está temporariamente sobrecarregado (503). Isso não significa que sua chave esteja errada. Aguarde alguns minutos e tente novamente; se persistir, verifique o status do serviço ou teste outro modelo disponível.");
+    }
+    throw new Error(`Erro da API Gemini (${response.status}): ${message}`);
   }
-  const text = data?.candidates?.[0]?.content?.parts?.map((part: any) => part.text || "").join("") || "";
+  const text = typeof data?.output_text === "string"
+    ? data.output_text
+    : Array.isArray(data?.outputs)
+      ? data.outputs.flatMap((item: any) => Array.isArray(item?.content) ? item.content : []).map((part: any) => part?.text || "").join("")
+      : "";
   if (!text.trim()) throw new Error("O Gemini não retornou uma resposta. Tente novamente com um pedido mais específico.");
   try { return JSON.parse(text.replace(/^\\uFEFF/, "").replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```\\s*$/, "")); }
   catch { throw new Error("A resposta da IA não veio em JSON válido. Tente novamente."); }
