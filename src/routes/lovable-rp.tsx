@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { isSupabaseConfigured, supabase } from "../integrations/supabase/client";
+import { LocalPreviewBuilder } from "../components/local-preview-builder";
 import { executeGitHubEdit, listGitHubRepositories, validateGeminiApiKey, validateOpenAIApiKey, validateGitHubToken, type GitHubRepoOption } from "../lib/lovable-rp-engine";
 import {
   Activity,
@@ -589,6 +590,8 @@ function LovableRpDemo() {
                   </div>
                 )}
                 {activeNav === "Prévia" && (
+                  <>
+                  <LocalPreviewBuilder />
                   <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div><h3 className="font-bold">Prévia do projeto</h3><p className="mt-1 text-sm text-slate-500">Abra a versão publicada do seu projeto dentro deste painel.</p></div>
@@ -608,6 +611,7 @@ function LovableRpDemo() {
                       <div className="mt-4 flex min-h-[300px] flex-col items-center justify-center rounded-xl border border-dashed border-slate-300 bg-slate-50 px-6 text-center"><div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-white text-pink-600 shadow-sm"><Play className="h-6 w-6" /></div><p className="font-semibold">Sua prévia aparecerá aqui</p><p className="mt-1 max-w-lg text-sm text-slate-500">Cole a URL publicada do projeto no campo acima. O painel tenta carregar a página sem tirar você do Lovable RP.</p></div>
                     )}
                   </div>
+                  </>
                 )}
                 {activeNav === "Histórico" && (
                   <div className="rounded-2xl border border-slate-200 bg-white shadow-sm xl:col-span-2">
