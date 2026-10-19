@@ -167,7 +167,7 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
     catch { throw new Error("A resposta da OpenAI não veio em JSON válido. Tente novamente."); }
   }
 
-  const geminiModels = [GEMINI_MODEL, "gemini-3.7-flash", "gemini-3.6-flash"];
+  const geminiModels = selectedModel ? [selectedModel] : [GEMINI_MODEL, "gemini-3.7-flash", "gemini-3.6-flash"];
   let lastStatus = 0;
   let lastMessage = "";
   let text = "";
@@ -258,7 +258,7 @@ export async function executeGitHubEdit(args: {
 }) {
   const token = args.githubToken.trim();
   const provider: AIProvider = args.aiProvider || "gemini";
-  const apiKey = (provider === "openai" ? args.openaiApiKey : provider === "openrouter" ? args.openrouterApiKey : args.geminiApiKey || "").trim();
+  const apiKey = ((provider === "openai" ? args.openaiApiKey : provider === "openrouter" ? args.openrouterApiKey : args.geminiApiKey) || "").trim();
   const repo = safeRepoName(args.repository);
   const branch = args.branch.trim() || "main";
   const request = args.request.trim();
