@@ -373,9 +373,14 @@ function LovableRpDemo() {
     setTestingGemini(true);
     try {
       await validateGeminiApiKey(geminiApiKey);
+      const models = await listGeminiModels(geminiApiKey);
+      setGeminiModels(models);
+      if (models.length && !models.some((model) => model.id === aiModel)) setAiModel(models[0].id);
+      window.sessionStorage.setItem("lovable-rp-web-ai-provider", "gemini");
+      setAiProvider("gemini");
       setGeminiConnected(true);
       window.sessionStorage.setItem("lovable-rp-web-gemini-key", geminiApiKey.trim());
-      setNotice("Gemini conectado e testado. A chave fica apenas nesta sessão do navegador.");
+      setNotice("Gemini conectado. " + (models.length ? models.length + " modelos encontrados; escolha o modelo na lista." : "A chave foi validada, mas a API não retornou modelos compatíveis."));
     } catch (error) {
       setNotice(error instanceof Error ? error.message : "Não foi possível testar a chave Gemini.");
     } finally { setTestingGemini(false); }
@@ -404,9 +409,11 @@ function LovableRpDemo() {
       if (!models.length) throw new Error("Nenhum modelo de texto foi encontrado nessa conta OpenRouter.");
       setOpenrouterModels(models);
       setAiModel(models[0].id);
+      setAiProvider("openrouter");
+      window.sessionStorage.setItem("lovable-rp-web-ai-provider", "openrouter");
       setOpenrouterConnected(true);
       window.sessionStorage.setItem("lovable-rp-web-openrouter-key", openrouterApiKey.trim());
-      setNotice("OpenRouter conectado. Escolha o modelo na lista abaixo.");
+      setNotice("OpenRouter conectado. " + models.length + " modelos encontrados; escolha o modelo na lista.");
     } catch (error) {
       setOpenrouterConnected(false);
       setNotice(error instanceof Error ? error.message : "Não foi possível carregar os modelos OpenRouter.");
