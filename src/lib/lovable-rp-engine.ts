@@ -126,39 +126,56 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string) {
     catch { throw new Error("A resposta da OpenAI não veio em JSON válido. Tente novamente."); }
   }
 
-  response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "x-goog-api-key": apiKey.trim(),
-    },
-    body: JSON.stringify({
-      model: GEMINI_MODEL,
-      input: prompt,
-      generation_config: {
-        temperature: 0.15,
-        thinking_level: "medium",
+  const geminiModels = [GEMINI_MODEL, "gemini-3.7-flash", "gemini-3.6-flash"];
+  let lastStatus = 0;
+  let lastMessage = "";
+  let text = "";
+
+  for (const model of geminiModels) {
+    response = await fetch("https://generativelanguage.googleapis.com/v1beta/interactions", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": apiKey.trim(),
       },
-    }),
-  });
-  data = await response.json().catch(() => ({}));
-  if (!response.ok) {
-    const message = data?.error?.message || data?.message || `Gemini HTTP ${response.status}`;
-    if (response.status === 401 || response.status === 403) throw new Error(`Não foi possível usar a chave Gemini: ${message}`);
-    if (response.status === 429) throw new Error("O limite ou a cota da API Gemini foi atingido. Aguarde ou confira as cotas no Google AI Studio.");
-    if (response.status === 503 || /high demand|overloaded|temporarily unavailable/i.test(message)) {
-      throw new Error("O Gemini está temporariamente sobrecarregado (503). Isso não significa que sua chave esteja errada. Aguarde alguns minutos e tente novamente; se persistir, verifique o status do serviço ou teste outro modelo disponível.");
+      body: JSON.stringify({
+        model,
+        input: prompt,
+        generation_config: {
+          temperature: 0.15,
+          thinking_level: "medium",
+        },
+      }),
+    });
+    data = await response.json().catch(() => ({}));
+    if (response.ok) {
+      text = typeof data?.output_text === "string"
+        ? data.output_text
+        : Array.isArray(data?.outputs)
+          ? data.outputs.flatMap((item: any) => Array.isArray(item?.content) ? item.content : []).map((part: any) => part?.text || "").join("")
+          : "";
+      if (!text.trim()) throw new Error(`O Gemini (${model}) não retornou texto. Tente novamente com um pedido mais específico.`);
+      try { return JSON.parse(text.replace(/^\\uFEFF/, "").replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```\\s*$/, "")); }
+      catch { throw new Error(`A resposta do Gemini (${model}) não veio em JSON válido. Tente novamente.`); }
     }
-    throw new Error(`Erro da API Gemini (${response.status}): ${message}`);
+
+    lastStatus = response.status;
+    lastMessage = data?.error?.message || data?.message || `Gemini HTTP ${response.status}`;
+
+    // Try the next stable model only for temporary capacity or rate-limit failures.
+    if (response.status === 503 || response.status === 429 || /high demand|overloaded|temporarily unavailable|resource exhausted/i.test(lastMessage)) {
+      continue;
+    }
+    if (response.status === 401 || response.status === 403) {
+      throw new Error(`A chave Gemini foi recusada (HTTP ${response.status}): ${lastMessage}`);
+    }
+    throw new Error(`Erro da API Gemini (HTTP ${response.status}): ${lastMessage}`);
   }
-  const text = typeof data?.output_text === "string"
-    ? data.output_text
-    : Array.isArray(data?.outputs)
-      ? data.outputs.flatMap((item: any) => Array.isArray(item?.content) ? item.content : []).map((part: any) => part?.text || "").join("")
-      : "";
-  if (!text.trim()) throw new Error("O Gemini não retornou uma resposta. Tente novamente com um pedido mais específico.");
-  try { return JSON.parse(text.replace(/^\\uFEFF/, "").replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```\\s*$/, "")); }
-  catch { throw new Error("A resposta da IA não veio em JSON válido. Tente novamente."); }
+
+  if (lastStatus === 429) {
+    throw new Error(`Todos os modelos Gemini alternativos atingiram o limite ou a cota (HTTP 429). Confira as cotas no Google AI Studio. Detalhe: ${lastMessage}`);
+  }
+  throw new Error(`Os modelos Gemini alternativos estão indisponíveis no momento (HTTP ${lastStatus}). Tentamos ${geminiModels.join(", ")}. Aguarde um pouco e tente novamente. Detalhe: ${lastMessage}`);
 }
 
 function isAllowedTextPath(path: string, size = 0) {
