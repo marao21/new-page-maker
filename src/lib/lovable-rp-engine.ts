@@ -165,7 +165,7 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
         ? data.output.flatMap((item: any) => Array.isArray(item?.content) ? item.content : []).filter((part: any) => part?.type === "output_text").map((part: any) => part.text || "").join("")
         : "";
     if (!outputText.trim()) throw new Error("A OpenAI não retornou texto. Tente novamente.");
-    try { return JSON.parse(outputText.replace(/^\\uFEFF/, "").replace(/^\\s*```(?:json)?\\s*/i, "").replace(/\\s*```\\s*$/, "")); }
+    try { return JSON.parse(outputText.replace(/^\uFEFF/, "").replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "")); }
     catch { throw new Error("A resposta da OpenAI não veio em JSON válido. Tente novamente."); }
   }
 
@@ -186,7 +186,7 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
     if (response.ok) {
       const text = (data?.candidates?.[0]?.content?.parts || []).map((part: any) => part?.text || "").join("");
       if (!text.trim()) throw new Error("O Gemini (" + model + ") não retornou texto.");
-      try { return JSON.parse(text.replace(/^\\uFEFF/, "").replace(/^\\s*\`\`\`(?:json)?\\s*/i, "").replace(/\\s*\`\`\`\\s*$/, "")); }
+      try { return JSON.parse(text.replace(/^\uFEFF/, "").replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "")); }
       catch { throw new Error("A resposta do Gemini (" + model + ") não veio em JSON válido."); }
     }
     lastStatus = response.status;
@@ -222,7 +222,7 @@ function pathRelevance(path: string, request: string) {
 
 function parseJsonResponse<T>(value: unknown, label: string): T {
   if (typeof value === "string") {
-    const cleaned = value.replace(/^\\uFEFF/, "").replace(/^\\s*[\\x60]{3}(?:json)?\\s*/i, "").replace(/\\s*[\\x60]{3}\\s*$/, "").trim();
+    const cleaned = value.replace(/^\uFEFF/, "").replace(/^\s*```(?:json)?\s*/i, "").replace(/\s*```\s*$/, "").trim();
     try { value = JSON.parse(cleaned); } catch { throw new Error(`A IA retornou ${label} sem JSON válido.`); }
   }
   if (!value || typeof value !== "object") throw new Error(`A IA retornou ${label} em formato inválido.`);
