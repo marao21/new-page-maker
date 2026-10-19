@@ -21,7 +21,7 @@ export function LocalPreviewBuilder() {
     if (!key) { alert("Conecte primeiro a chave " + (provider === "openai" ? "OpenAI" : "Gemini") + " na aba Conexões."); return; }
     setBusy(true);
     try {
-      const instruction = "Crie um protótipo de site completo em um único arquivo HTML autônomo para pré-visualização. Responda apenas com HTML completo, sem markdown. Inclua CSS em style e JavaScript inline opcional. Não use bibliotecas externas, frameworks, build tools, chamadas de rede, credenciais ou backend. Faça design responsivo e interativo usando HTML/CSS/JS puro. Pedido: " + prompt;
+      const instruction = html ? ("Edite o HTML atual para cumprir a solicitação, preservando o que não foi pedido para mudar. Responda APENAS com o HTML completo atualizado, sem markdown. Não use bibliotecas externas, frameworks, chamadas de rede, credenciais ou backend.\nHTML ATUAL:\n" + html + "\nALTERAÇÃO SOLICITADA:\n" + prompt) : ("Crie um protótipo de site completo em um único arquivo HTML autônomo para pré-visualização. Responda apenas com HTML completo, sem markdown. Inclua CSS em style e JavaScript inline opcional. Não use bibliotecas externas, frameworks, build tools, chamadas de rede, credenciais ou backend. Faça design responsivo e interativo usando HTML/CSS/JS puro. Pedido: " + prompt);
       let result = "";
       if (provider === "openai") {
         const response = await fetch("https://api.openai.com/v1/responses", {
@@ -58,15 +58,15 @@ export function LocalPreviewBuilder() {
     <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
       <div className="mb-4 flex items-start gap-3">
         <div className="rounded-xl bg-pink-50 p-3 text-pink-600"><Code2 className="h-5 w-5" /></div>
-        <div><h3 className="font-bold">Criar e visualizar antes de hospedar</h3><p className="mt-1 text-sm text-slate-500">Gere um protótipo e veja o resultado aqui mesmo, sem publicar na Vercel ou no Lovable.</p></div>
+        <div><h3 className="font-bold">Editor visual com prévia ao vivo</h3><p className="mt-1 text-sm text-slate-500">Crie a página, peça alterações por texto e acompanhe o resultado antes de hospedar.</p></div>
       </div>
       <div className="mb-3 flex flex-wrap gap-2">
         <button onClick={() => setProvider("openai")} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${provider === "openai" ? "border-emerald-600 bg-emerald-50 text-emerald-800" : "border-slate-200"}`}>OpenAI API</button>
         <button onClick={() => setProvider("gemini")} className={`rounded-lg border px-3 py-2 text-xs font-semibold ${provider === "gemini" ? "border-emerald-600 bg-emerald-50 text-emerald-800" : "border-slate-200"}`}>Gemini API</button>
       </div>
-      <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={3} placeholder="Ex.: Crie uma página de vendas para uma pizzaria, com cardápio, preços, botão de WhatsApp e cores preto e vermelho." className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100" />
+      <textarea value={prompt} onChange={(event) => setPrompt(event.target.value)} rows={3} placeholder="Descreva o projeto ou a alteração que deseja fazer." className="w-full rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100" />
       <div className="mt-3 flex flex-wrap gap-2">
-        <button onClick={generate} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-pink-700 disabled:opacity-60"><Sparkles className="h-4 w-4" />{busy ? "Gerando protótipo..." : "Gerar prévia local"}</button>
+        <button onClick={generate} disabled={busy} className="inline-flex items-center gap-2 rounded-xl bg-pink-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-pink-700 disabled:opacity-60"><Sparkles className="h-4 w-4" />{busy ? "Gerando ou editando..." : (html ? "Aplicar alteração e atualizar prévia" : "Criar projeto e ver prévia")}</button>
         {html && <button onClick={() => { const url = URL.createObjectURL(new Blob([html], { type: "text/html;charset=utf-8" })); const a = document.createElement("a"); a.href = url; a.download = "lovable-rp-preview.html"; a.click(); URL.revokeObjectURL(url); }} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold"><Download className="h-4 w-4" />Baixar HTML</button>}
         {html && <button onClick={() => { setHtml(""); sessionStorage.removeItem("lovable-rp-web-local-preview-html"); }} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold"><Trash2 className="h-4 w-4" />Limpar</button>}
       </div>
