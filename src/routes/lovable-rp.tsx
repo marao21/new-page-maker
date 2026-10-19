@@ -234,11 +234,10 @@ function LovableRpDemo() {
         authWindow.document.title = "Conectando ao GitHub";
         authWindow.document.body.innerHTML = "<p style='font-family:system-ui;padding:24px'>Solicitando código seguro ao GitHub…</p>";
       }
-      const requestBody = new URLSearchParams({ client_id: clientId, scope: "repo read:user" });
-      const response = await fetch("https://github.com/login/device/code", {
+      const response = await fetch("/api/github/oauth", {
         method: "POST",
-        headers: { "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded" },
-        body: requestBody.toString(),
+        headers: { "Accept": "application/json", "Content-Type": "application/json" },
+        body: JSON.stringify({ kind: "device_code", params: { client_id: clientId, scope: "repo read:user" } }),
       });
       const data = await response.json();
       if (!response.ok || !data.device_code || !data.user_code) throw new Error(data.error_description || data.error || "O GitHub não iniciou a autorização. Confira o Client ID e se Device Flow está ativado.");
@@ -250,15 +249,17 @@ function LovableRpDemo() {
       const expiresAt = Date.now() + Math.min(Number(data.expires_in) || 900, 900) * 1000;
       while (Date.now() < expiresAt) {
         await new Promise((resolve) => window.setTimeout(resolve, interval));
-        const tokenBody = new URLSearchParams({
-          client_id: clientId,
-          device_code: data.device_code,
-          grant_type: "urn:ietf:params:oauth:grant-type:device_code",
-        });
-        const tokenResponse = await fetch("https://github.com/login/oauth/access_token", {
+        const tokenResponse = await fetch("/api/github/oauth", {
           method: "POST",
-          headers: { "Accept": "application/json", "Content-Type": "application/x-www-form-urlencoded" },
-          body: tokenBody.toString(),
+          headers: { "Accept": "application/json", "Content-Type": "application/json" },
+          body: JSON.stringify({
+            kind: "access_token",
+            params: {
+              client_id: clientId,
+              device_code: data.device_code,
+              grant_type: "urn:ietf:params:oauth:grant-type:device_code",
+            },
+          }),
         });
         const tokenData = await tokenResponse.json();
         if (tokenData.access_token) {
