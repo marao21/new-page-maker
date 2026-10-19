@@ -608,8 +608,8 @@ function LovableRpDemo() {
                 </div>
                 <div className="rounded-2xl border border-white/15 bg-white/[0.08] p-4 backdrop-blur-sm sm:p-5">
                   <div className="mb-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setCommandMode("edit")} className={`rounded-lg px-3 py-2 text-xs font-bold ${commandMode === "edit" ? "bg-pink-500 text-white" : "border border-white/15 text-white/80"}`}>Editar projeto existente</button>
-                    <button type="button" onClick={() => setCommandMode("new")} className={`rounded-lg px-3 py-2 text-xs font-bold ${commandMode === "new" ? "bg-pink-500 text-white" : "border border-white/15 text-white/80"}`}>Criar projeto do zero</button>
+                    <button type="button" onClick={() => { setCommandMode("edit"); setCommandText(""); }} className={`rounded-lg px-3 py-2 text-xs font-bold ${commandMode === "edit" ? "bg-pink-500 text-white" : "border border-white/15 text-white/80"}`}>Editar projeto existente</button>
+                    <button type="button" onClick={() => { setCommandMode("new"); setCommandText(""); }} className={`rounded-lg px-3 py-2 text-xs font-bold ${commandMode === "new" ? "bg-pink-500 text-white" : "border border-white/15 text-white/80"}`}>Criar projeto do zero</button>
                   </div>
                   {commandMode === "new" && <div className="mb-4"><label htmlFor="rp-new-project-name" className="mb-2 block text-xs font-semibold">Nome do novo repositório</label><input id="rp-new-project-name" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="meu-projeto" className="w-full rounded-xl border border-white/15 bg-[#1c1025]/70 px-3 py-2.5 text-sm text-white outline-none focus:border-pink-300" /><p className="mt-1 text-[11px] text-pink-100/70">A IA vai decidir pelo pedido se o projeto precisa de integração Supabase.</p></div>}
                   <label htmlFor="rp-command" className="mb-3 block text-sm font-semibold">{commandMode === "new" ? "Descreva o aplicativo ou site que quer criar" : "Qual tarefa você quer realizar?"}</label>
