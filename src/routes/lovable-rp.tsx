@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type ComponentProps } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { isSupabaseConfigured, supabase } from "../integrations/supabase/client";
 import { LocalPreviewBuilder } from "../components/local-preview-builder";
-import { executeGitHubEdit, listGitHubRepositories, listGeminiModels, listOpenAIModels, listOpenRouterModels, validateGeminiApiKey, validateOpenAIApiKey, validateGitHubToken, type AIModelOption, type AIProvider, type GitHubRepoOption } from "../lib/lovable-rp-engine";
+import { createGitHubProject, executeGitHubEdit, listGitHubRepositories, listGeminiModels, listOpenAIModels, listOpenRouterModels, validateGeminiApiKey, validateOpenAIApiKey, validateGitHubToken, type AIModelOption, type AIProvider, type GitHubRepoOption } from "../lib/lovable-rp-engine";
 import {
   Activity,
   ArrowRight,
@@ -81,6 +81,9 @@ function LovableRpDemo() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [signedInEmail, setSignedInEmail] = useState<string|null>(null);
   const [commandText, setCommandText] = useState("");
+  const [commandMode, setCommandMode] = useState<"edit" | "new">("edit");
+  const [newProjectName, setNewProjectName] = useState("meu-novo-projeto");
+  const [assistantReply, setAssistantReply] = useState<{title:string;summary:string;details:string[];links:Array<{label:string;url:string}>;needsSupabase?:boolean;supabaseReason?:string}|null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewInput, setPreviewInput] = useState("");
   const [githubToken, setGithubToken] = useState("");
@@ -422,74 +425,52 @@ function LovableRpDemo() {
 
   async function executeCommand() {
     const prompt = commandText.trim();
-    if (!prompt) { setNotice("Escreva o que você deseja alterar no projeto."); return; }
-    const useOpenAI = !!openaiApiKey.trim() && openaiConnected;
-    const useGemini = !!geminiApiKey.trim() && geminiConnected;
-    if (!githubToken.trim() || (!useOpenAI && !useGemini)) {
-      setNotice("Conecte o GitHub e teste pelo menos uma IA: OpenAI API ou Gemini API. O site usará automaticamente a que estiver conectada.");
+    if (!prompt) { setNotice("Descreva o projeto ou a alteração que deseja."); return; }
+    const aiConnected = aiProvider === "openai" ? !!openaiApiKey.trim() && openaiConnected : aiProvider === "openrouter" ? !!openrouterApiKey.trim() && openrouterConnected : !!geminiApiKey.trim() && geminiConnected;
+    if (!githubToken.trim() || !aiConnected) {
+      setNotice("Conecte o GitHub e teste o provedor de IA selecionado.");
       setActiveNav("Conexões");
       return;
     }
     setExecuting(true);
-    setExecutionProgress("Iniciando execução...");
+    setExecutionProgress(commandMode === "new" ? "Planejando o novo projeto..." : "Analisando o pedido...");
     setNotice("");
+    setAssistantReply(null);
     try {
-      const result = await executeGitHubEdit({
-        githubToken, geminiApiKey, openaiApiKey, openrouterApiKey, aiProvider, aiModel, repository: selectedRepository, branch: selectedBranch, request: prompt,
-        onProgress: setExecutionProgress,
-      });
-      let savedToDatabase = false;
-      if (currentUserId && databaseStatus === "Supabase conectado") {
-        try {
-          const projectId = projects.find((project) => project.repository_full_name === result.repository)?.id ?? null;
-          const { data: savedCommand, error: saveError } = await rpDb.from("lovable_rp_commands").insert({
-            owner_id: currentUserId, project_id: projectId, prompt, status: "completed",
-            result: JSON.stringify({ summary: result.summary, commitUrl: result.commitUrl, files: result.files }),
-          }).select("id").single();
-          if (!saveError && savedCommand) {
-            await rpDb.from("lovable_rp_activity").insert({ owner_id: currentUserId, project_id: projectId, command_id: savedCommand.id, event_type: "command.completed", message: `${result.summary} · ${result.files.length} arquivo(s)` });
-            savedToDatabase = true;
-          }
-        } catch { savedToDatabase = false; }
+      if (commandMode === "new") {
+        const result = await createGitHubProject({
+          githubToken, geminiApiKey, openaiApiKey, openrouterApiKey, aiProvider, aiModel,
+          projectName: newProjectName, request: prompt, onProgress: setExecutionProgress,
+        });
+        setSelectedRepository(result.repository);
+        setSelectedBranch(result.branch);
+        window.sessionStorage.setItem("lovable-rp-web-repository", result.repository);
+        window.sessionStorage.setItem("lovable-rp-web-branch", result.branch);
+        setRepoOptions((current) => [{ full_name: result.repository, name: result.repository.split("/").pop() || result.repository, default_branch: result.branch, private: true, html_url: result.repoUrl }, ...current.filter((item) => item.full_name !== result.repository)]);
+        setAssistantReply({
+          title: "Seu projeto foi criado",
+          summary: result.summary,
+          details: [`Repositório: ${result.repository}`, `Branch: ${result.branch}`, `${result.files.length} arquivos iniciais criados`, result.needsSupabase ? "A IA identificou que o projeto precisa de Supabase." : "A IA identificou que o projeto pode funcionar sem Supabase."],
+          links: [{label:"Abrir repositório",url:result.repoUrl},{label:"Ver commit inicial",url:result.commitUrl}],
+          needsSupabase: result.needsSupabase,
+          supabaseReason: result.supabaseReason,
+        });
+        setNotice("Novo projeto criado e arquivos enviados para o GitHub.");
+      } else {
+        const result = await executeGitHubEdit({
+          githubToken, geminiApiKey, openaiApiKey, openrouterApiKey, aiProvider, aiModel, repository: selectedRepository, branch: selectedBranch, request: prompt,
+          onProgress: setExecutionProgress,
+        });
+        setAssistantReply({title:"Alterações aplicadas",summary:result.summary,details:[`Repositório: ${result.repository}`,`Branch: ${result.branch}`,`Arquivos alterados: ${result.files.join(", ")}`],links:[{label:"Ver commit no GitHub",url:result.commitUrl}]});
+        setActivity((current) => [{ id: result.commitSha, title: result.summary, detail: `${result.repository} · ${result.files.join(", ")}`, time: new Date().toLocaleString("pt-BR"), status: "Concluído" }, ...current]);
+        setNotice(`Alteração gravada no GitHub: ${result.files.length} arquivo(s).`);
       }
-      setActivity((current) => [{ id: result.commitSha, title: result.summary, detail: `${result.repository} · ${result.files.join(", ")}`, time: new Date().toLocaleString("pt-BR"), status: "Concluído" }, ...current]);
-      setNotice(`Alteração gravada no GitHub: ${result.files.length} arquivo(s). Commit: ${result.commitUrl}${currentUserId && databaseStatus === "Supabase conectado" && !savedToDatabase ? " (o histórico não foi salvo no Supabase)" : savedToDatabase ? " · histórico salvo no Supabase" : ""}`);
-      window.sessionStorage.setItem("lovable-rp-web-repository", selectedRepository);
-      window.sessionStorage.setItem("lovable-rp-web-branch", selectedBranch);
-      setActiveNav("Histórico");
+      setActiveNav("Comandos");
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Falha ao executar a alteração.";
-      setActivity((current) => [{ id: Date.now(), title: prompt.slice(0, 70), detail: message, time: new Date().toLocaleString("pt-BR"), status: "Erro" }, ...current]);
-      if (currentUserId && databaseStatus === "Supabase conectado") {
-        try {
-          const projectId = projects.find((project) => project.repository_full_name === selectedRepository)?.id ?? null;
-          const { data: failedCommand, error: saveError } = await rpDb.from("lovable_rp_commands").insert({
-            owner_id: currentUserId,
-            project_id: projectId,
-            prompt,
-            status: "failed",
-            error_message: message,
-          }).select("id").single();
-          if (!saveError && failedCommand) {
-            await rpDb.from("lovable_rp_activity").insert({
-              owner_id: currentUserId,
-              project_id: projectId,
-              command_id: failedCommand.id,
-              event_type: "command.failed",
-              message: message.slice(0, 1000),
-            });
-          }
-        } catch {
-          // A falha original continua visível no painel mesmo se o histórico estiver indisponível.
-        }
-      }
-      setNotice(`A execução não foi concluída: ${message}`);
-      setActiveNav("Histórico");
-    } finally {
-      setExecuting(false);
-      setExecutionProgress("");
-      setCommandText("");
-    }
+      const message = error instanceof Error ? error.message : "Não foi possível concluir a tarefa.";
+      setNotice(message);
+      setAssistantReply({title:"Não foi possível concluir",summary:message,details:["Confira as conexões e permissões e tente novamente."],links:[]});
+    } finally { setExecuting(false); }
   }
 
   const selectedRepoOption = repoOptions.find((repo) => repo.full_name === selectedRepository);
@@ -593,14 +574,19 @@ function LovableRpDemo() {
                   <div className="mt-6 flex flex-wrap gap-2"><span className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/85"><Code2 className="mr-1.5 inline h-3.5 w-3.5" /> Código</span><span className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/85"><Github className="mr-1.5 inline h-3.5 w-3.5" /> GitHub</span><span className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/85"><Sparkles className="mr-1.5 inline h-3.5 w-3.5" /> Automação</span></div>
                 </div>
                 <div className="rounded-2xl border border-white/15 bg-white/[0.08] p-4 backdrop-blur-sm sm:p-5">
-                  <label htmlFor="rp-command" className="mb-3 block text-sm font-semibold">Qual tarefa você quer realizar?</label>
-                  <textarea id="rp-command" value={commandText} onChange={(event) => setCommandText(event.target.value)} placeholder="Ex.: Altere a cor do botão principal para vermelho e verifique os arquivos afetados..." className="min-h-32 w-full resize-y rounded-xl border border-white/15 bg-[#1c1025]/70 p-3 text-sm leading-6 text-white outline-none placeholder:text-white/40 focus:border-pink-300/70 focus:ring-2 focus:ring-pink-400/20" />
+                  <div className="mb-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => setCommandMode("edit")} className={`rounded-lg px-3 py-2 text-xs font-bold ${commandMode === "edit" ? "bg-pink-500 text-white" : "border border-white/15 text-white/80"}`}>Editar projeto existente</button>
+                    <button type="button" onClick={() => setCommandMode("new")} className={`rounded-lg px-3 py-2 text-xs font-bold ${commandMode === "new" ? "bg-pink-500 text-white" : "border border-white/15 text-white/80"}`}>Criar projeto do zero</button>
+                  </div>
+                  {commandMode === "new" && <div className="mb-4"><label htmlFor="rp-new-project-name" className="mb-2 block text-xs font-semibold">Nome do novo repositório</label><input id="rp-new-project-name" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="meu-projeto" className="w-full rounded-xl border border-white/15 bg-[#1c1025]/70 px-3 py-2.5 text-sm text-white outline-none focus:border-pink-300" /><p className="mt-1 text-[11px] text-pink-100/70">A IA vai decidir pelo pedido se o projeto precisa de integração Supabase.</p></div>}
+                  <label htmlFor="rp-command" className="mb-3 block text-sm font-semibold">{commandMode === "new" ? "Descreva o aplicativo ou site que quer criar" : "Qual tarefa você quer realizar?"}</label>
+                  <textarea id="rp-command" value={commandText} onChange={(event) => setCommandText(event.target.value)} placeholder={commandMode === "new" ? "Ex.: Crie uma landing page moderna para uma pizzaria, com cardápio e botão para WhatsApp. Não precisa de banco de dados." : "Ex.: Altere a cor do botão principal para vermelho e verifique os arquivos afetados..."} className="min-h-32 w-full resize-y rounded-xl border border-white/15 bg-[#1c1025]/70 p-3 text-sm leading-6 text-white outline-none placeholder:text-white/40 focus:border-pink-300/70 focus:ring-2 focus:ring-pink-400/20" />
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button type="button" onClick={() => setCommandText("Crie uma nova página responsiva e profissional, integrada ao estilo visual existente. Analise os arquivos antes de alterar e preserve as funcionalidades atuais.")} className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-pink-100 hover:bg-white/10">＋ Criar página</button>
                     <button type="button" onClick={() => setCommandText("Analise o projeto e implemente a melhoria que descrevi no campo principal, alterando somente os arquivos necessários e preservando o restante.")} className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-pink-100 hover:bg-white/10">✎ Editar projeto</button>
                     <button type="button" onClick={() => setCommandText("Revise a autenticação do projeto usando Supabase Auth, com rotas protegidas, validações e mensagens de erro claras. Não exponha chaves privadas no frontend.")} className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-pink-100 hover:bg-white/10">⚙ Configurar autenticação</button>
                   </div>
-                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><span className="text-[11px] text-pink-100/70">{executionProgress || "GitHub + Gemini · execução real após conectar"}</span><button onClick={executeCommand} disabled={executing} className="inline-flex items-center justify-center gap-2 rounded-xl bg-pink-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-pink-950/30 transition hover:bg-pink-400 disabled:cursor-wait disabled:opacity-60"><Play className="h-4 w-4" /> {executing ? "Executando..." : "Executar alteração"}</button></div>
+                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><span className="text-[11px] text-pink-100/70">{executionProgress || "GitHub + Gemini · execução real após conectar"}</span><button onClick={executeCommand} disabled={executing} className="inline-flex items-center justify-center gap-2 rounded-xl bg-pink-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-pink-950/30 transition hover:bg-pink-400 disabled:cursor-wait disabled:opacity-60"><Play className="h-4 w-4" /> {executing ? "Trabalhando..." : commandMode === "new" ? "Criar projeto" : "Executar alteração"}</button></div>
                 </div>
               </div>
             </section>
