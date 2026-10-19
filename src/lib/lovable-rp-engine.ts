@@ -10,7 +10,7 @@ type TreeEntry = { path: string; type: string; size?: number; sha: string };
 type Change = { path: string; content: string };
 
 const GITHUB_API = "https://api.github.com";
-const GEMINI_MODEL = "gemini-2.5-flash";
+const GEMINI_MODEL = "gemini-3.8-flash";
 const OPENAI_MODEL = "gpt-4.1-mini";
 type AIProvider = "gemini" | "openai";
 const MAX_CONTEXT_FILES = 8;
@@ -250,7 +250,7 @@ export async function executeGitHubEdit(args: {
   progress(`Analisando ${selectedFiles.length} arquivos e preparando as alterações...`);
   const fileContext = selectedFiles.map((file) => `--- ARQUIVO: ${file.path} ---\n${file.content}\n--- FIM DO ARQUIVO ---`).join("\n\n");
   const generated = parseJsonResponse<{ summary?: string; commitMessage?: string; changes?: Change[] }>(
-    await callGemini(apiKey, [
+    await callAI("gemini", apiKey, [
       "Você é um agente de engenharia de software que edita um repositório GitHub.",
       "Retorne SOMENTE JSON válido: {\"summary\":\"resumo em português\",\"commitMessage\":\"mensagem curta de commit\",\"changes\":[{\"path\":\"caminho relativo\",\"content\":\"conteúdo COMPLETO do arquivo\"}]}.",
       "Edite somente o necessário para cumprir o pedido. Para cada arquivo modificado, devolva o conteúdo COMPLETO, não um diff. Não invente APIs, não remova funcionalidades não relacionadas, não inclua markdown fences e não altere arquivos secretos.",
