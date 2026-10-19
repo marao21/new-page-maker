@@ -44,11 +44,9 @@ export const Route = createFileRoute("/api/supabase/oauth/callback")({
           const headers = new Headers({
             Location: new URL("/lovable-rp?supabase_oauth=connected", url.origin).toString(),
             "Cache-Control": "no-store",
-            "Set-Cookie": [
-              `lovable_rp_supabase_access=${encodeURIComponent(tokens.access_token)}; HttpOnly; SameSite=Lax; Path=/api/supabase; Max-Age=${maxAge}${secure}`,
-              `lovable_rp_supabase_oauth_state=; HttpOnly; SameSite=Lax; Path=/api/supabase/oauth; Max-Age=0${secure}`,
-            ].join(", "),
           });
+          headers.append("Set-Cookie", `lovable_rp_supabase_access=${encodeURIComponent(tokens.access_token)}; HttpOnly; SameSite=Lax; Path=/api/supabase; Max-Age=${maxAge}${secure}`);
+          headers.append("Set-Cookie", `lovable_rp_supabase_oauth_state=; HttpOnly; SameSite=Lax; Path=/api/supabase/oauth; Max-Age=0${secure}`);
           if (typeof tokens.refresh_token === "string" && tokens.refresh_token) {
             headers.append("Set-Cookie", `lovable_rp_supabase_refresh=${encodeURIComponent(tokens.refresh_token)}; HttpOnly; SameSite=Lax; Path=/api/supabase; Max-Age=2592000${secure}`);
           }
