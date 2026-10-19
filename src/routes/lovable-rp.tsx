@@ -91,7 +91,7 @@ function LovableRpDemo() {
   const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [openrouterApiKey, setOpenrouterApiKey] = useState("");
   const [aiProvider, setAiProvider] = useState<AIProvider>("gemini");
-  const [aiModel, setAiModel] = useState("gemini-2.5-flash");
+  const [aiModel, setAiModel] = useState("gemini-3.8-flash");
   const [geminiModels, setGeminiModels] = useState<AIModelOption[]>([]);
   const [openaiModels, setOpenaiModels] = useState<AIModelOption[]>([]);
   const [openrouterModels, setOpenrouterModels] = useState<AIModelOption[]>([]);
@@ -142,7 +142,7 @@ function LovableRpDemo() {
       setOpenaiApiKey(window.sessionStorage.getItem("lovable-rp-web-openai-key") || "");
       setOpenrouterApiKey(window.sessionStorage.getItem("lovable-rp-web-openrouter-key") || "");
       setAiProvider((window.sessionStorage.getItem("lovable-rp-web-ai-provider") as AIProvider) || "gemini");
-      setAiModel(window.sessionStorage.getItem("lovable-rp-web-ai-model") || "gemini-2.5-flash");
+      setAiModel(window.sessionStorage.getItem("lovable-rp-web-ai-model") || "gemini-3.8-flash");
       setOpenaiConnected(!!window.sessionStorage.getItem("lovable-rp-web-openai-key"));
       setGeminiConnected(!!window.sessionStorage.getItem("lovable-rp-web-gemini-key"));
       setOpenrouterConnected(!!window.sessionStorage.getItem("lovable-rp-web-openrouter-key"));
