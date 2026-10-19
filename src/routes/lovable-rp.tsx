@@ -406,7 +406,7 @@ function LovableRpDemo() {
       await validateGeminiApiKey(geminiApiKey);
       const models = await listGeminiModels(geminiApiKey);
       setGeminiModels(models);
-      if (models.length && !models.some((model) => model.id === aiModel)) setAiModel(models[0].id);
+      if (models.length) { const preferred = models.find((model) => /gemini-3\\.8-flash/i.test(model.id)) || models.find((model) => /flash/i.test(model.id)) || models[0]; setAiModel(preferred.id); window.sessionStorage.setItem("lovable-rp-web-ai-model", preferred.id); }
       window.sessionStorage.setItem("lovable-rp-web-ai-provider", "gemini");
       setAiProvider("gemini");
       setGeminiConnected(true);
@@ -423,6 +423,10 @@ function LovableRpDemo() {
     try {
       await validateOpenAIApiKey(openaiApiKey);
       setOpenaiConnected(true);
+      setAiProvider("openai");
+      setAiModel("gpt-4.1-mini");
+      window.sessionStorage.setItem("lovable-rp-web-ai-provider", "openai");
+      window.sessionStorage.setItem("lovable-rp-web-ai-model", "gpt-4.1-mini");
       window.sessionStorage.setItem("lovable-rp-web-openai-key", openaiApiKey.trim());
       setNotice("OpenAI API conectada e testada. A chave fica apenas nesta sessão do navegador.");
     } catch (error) {
