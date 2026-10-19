@@ -290,7 +290,7 @@ export async function executeGitHubEdit(args: {
     "Escolha no máximo 8 caminhos que existam exatamente na lista. Prefira componentes, rotas, estilos e configurações estritamente necessárias. Não escolha arquivos secretos, dependências instaladas ou arquivos de lock.",
     "PEDIDO DO USUÁRIO:\n" + request,
     "ARQUIVOS DO REPOSITÓRIO:\n" + treeList,
-  ].join("\n\n"));
+  ].join("\n\n"), args.aiModel);
   const selectedPaths = Array.isArray(selection?.paths)
     ? selection.paths.filter((path: unknown): path is string => typeof path === "string" && tree.some((entry) => entry.path === path)).slice(0, MAX_CONTEXT_FILES)
     : [];
@@ -324,7 +324,7 @@ export async function executeGitHubEdit(args: {
       "PEDIDO:\n" + request,
       "BRANCH: " + branch,
       "ARQUIVOS ATUAIS:\n" + fileContext,
-    ].join("\n\n")),
+    ].join("\n\n"), args.aiModel),
     "as alterações",
   );
   const changes = Array.isArray(generated.changes) ? generated.changes.slice(0, MAX_PATCH_FILES) : [];
