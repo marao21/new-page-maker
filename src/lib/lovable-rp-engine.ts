@@ -89,7 +89,7 @@ export async function listGeminiModels(apiKey: string): Promise<AIModelOption[]>
   const response = await fetch("https://generativelanguage.googleapis.com/v1beta/models?key=" + encodeURIComponent(apiKey.trim()));
   const data = await response.json().catch(() => ({}));
   if (!response.ok) throw new Error(data?.error?.message || "Falha ao listar modelos Gemini (HTTP " + response.status + ").");
-  return (data?.models || []).filter((m: any) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.some((method: string) => /generateContent|interactions/i.test(method))).map((m: any) => ({ id: String(m.name || "").replace(/^models\//, ""), name: String(m.displayName || m.name || "") })).filter((m: AIModelOption) => m.id);
+  return (data?.models || []).filter((m: any) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.some((method: string) => /generateContent/i.test(method))).map((m: any) => ({ id: String(m.name || "").replace(/^models\//, ""), name: String(m.displayName || m.name || "") })).filter((m: AIModelOption) => m.id);
 }
 
 export async function validateOpenAIApiKey(apiKey: string) {
