@@ -371,6 +371,34 @@ function LovableRpDemo() {
     } finally { setConnectingGithub(false); }
   }
 
+  function disconnectGemini() {
+    window.sessionStorage.removeItem("lovable-rp-web-gemini-key");
+    setGeminiApiKey(""); setGeminiConnected(false); setGeminiModels([]);
+    if (aiProvider === "gemini") { setAiModel(""); window.sessionStorage.removeItem("lovable-rp-web-ai-model"); }
+    setNotice("Chave Gemini desconectada e removida desta sessão.");
+  }
+
+  function disconnectOpenAI() {
+    window.sessionStorage.removeItem("lovable-rp-web-openai-key");
+    setOpenaiApiKey(""); setOpenaiConnected(false); setOpenaiModels([]);
+    if (aiProvider === "openai") { setAiModel(""); window.sessionStorage.removeItem("lovable-rp-web-ai-model"); }
+    setNotice("Chave OpenAI desconectada e removida desta sessão.");
+  }
+
+  function disconnectOpenRouter() {
+    window.sessionStorage.removeItem("lovable-rp-web-openrouter-key");
+    setOpenrouterApiKey(""); setOpenrouterConnected(false); setOpenrouterModels([]);
+    if (aiProvider === "openrouter") { setAiModel(""); window.sessionStorage.removeItem("lovable-rp-web-ai-model"); }
+    setNotice("Chave OpenRouter desconectada e removida desta sessão.");
+  }
+
+  function disconnectGithub() {
+    window.sessionStorage.removeItem("lovable-rp-web-github-token");
+    window.sessionStorage.removeItem("lovable-rp-web-github-user");
+    setGithubToken(""); setGithubUser(""); setRepoOptions([]);
+    setNotice("GitHub desconectado e token removido desta sessão.");
+  }
+
   async function handleTestGemini() {
     if (!geminiApiKey.trim()) { setNotice("Cole sua chave da API Gemini."); return; }
     setTestingGemini(true);
@@ -664,7 +692,7 @@ function LovableRpDemo() {
                         <p className="mt-3 text-xs leading-5 text-slate-500">Conecte sua conta pela página oficial do GitHub. O código será gerado pelo GitHub e a conexão será verificada automaticamente.</p>
                         <button onClick={handleStartGithubDeviceFlow} disabled={githubDeviceBusy} className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-pink-600 via-fuchsia-600 to-orange-400 px-4 py-3 text-sm font-bold text-white shadow-sm hover:brightness-105 disabled:opacity-60"><Github className="h-4 w-4" />{githubDeviceBusy ? "Aguardando autorização..." : githubUser ? "Reconectar GitHub" : "Conectar GitHub"}<ArrowRight className="h-4 w-4" /></button>
                         {githubDeviceUserCode && <div className="mt-4 rounded-xl border border-violet-200 bg-violet-50 p-4"><p className="text-xs font-bold text-violet-950">Autorize no GitHub</p><p className="mt-1 text-xs text-violet-800">Use o código abaixo na página que foi aberta.</p><div className="mt-3 rounded-lg bg-violet-950 px-3 py-4 text-center font-mono text-2xl font-extrabold tracking-[0.2em] text-fuchsia-300">{githubDeviceUserCode}</div><button onClick={() => { void navigator.clipboard.writeText(githubDeviceUserCode); setNotice("Código de autorização copiado."); }} className="mt-2 w-full rounded-lg border border-violet-200 bg-white px-3 py-2 text-xs font-bold text-violet-950">Copiar código</button><p className="mt-2 text-center text-[11px] text-violet-800">Aguardando autorização… verificação automática</p></div>}
-                        {githubUser && <p className="mt-3 text-xs text-emerald-700">✓ Conectado como @{githubUser} · {repoOptions.length} repositórios encontrados</p>}
+                        {githubUser && <><p className="mt-3 text-xs text-emerald-700">✓ Conectado como @{githubUser} · {repoOptions.length} repositórios encontrados</p><button onClick={disconnectGithub} className="mt-2 w-full rounded-xl border border-rose-200 px-3 py-2 text-xs font-bold text-rose-700">Desconectar GitHub</button></>}
                       </div>
                       <div className="rounded-xl border border-slate-200 p-4">
                         <div className="flex items-center gap-2"><DatabaseIcon className="h-5 w-5 text-emerald-600" /><h4 className="text-sm font-bold">Supabase Management API</h4><span className="ml-auto rounded-full bg-amber-50 px-2 py-1 text-[10px] font-bold text-amber-700">Configuração necessária</span></div>
@@ -677,14 +705,14 @@ function LovableRpDemo() {
                         <label htmlFor="rp-gemini-key" className="mt-4 block text-xs font-semibold text-slate-600">Chave da API Gemini</label>
                         <input id="rp-gemini-key" type="password" autoComplete="off" value={geminiApiKey} onChange={(event) => { setGeminiApiKey(event.target.value); setGeminiConnected(false); }} placeholder="AIza..." className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100" />
                         <p className="mt-2 text-[11px] leading-5 text-slate-500">A execução web usa uma API de IA; não usa automaticamente a sessão ou os conectores do ChatGPT.</p>
-                        <button onClick={handleTestGemini} disabled={testingGemini} className="mt-3 w-full rounded-xl bg-pink-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-pink-700 disabled:opacity-60">{testingGemini ? "Testando chave..." : "Testar e salvar nesta sessão"}</button>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2"><button onClick={handleTestGemini} disabled={testingGemini} className="w-full rounded-xl bg-pink-600 px-3 py-2.5 text-xs font-bold text-white hover:bg-pink-700 disabled:opacity-60">{testingGemini ? "Testando chave..." : "Testar e salvar nesta sessão"}</button><button onClick={disconnectGemini} disabled={!geminiApiKey && !geminiConnected} className="w-full rounded-xl border border-rose-200 px-3 py-2.5 text-xs font-bold text-rose-700 disabled:opacity-40">Desconectar chave</button></div>
                       </div>
                       <div className="rounded-xl border border-slate-200 p-4">
                         <div className="flex items-center gap-2"><Bot className="h-5 w-5 text-emerald-600" /><h4 className="text-sm font-bold">OpenAI API (GPT)</h4>{openaiConnected && <span className="ml-auto rounded-full bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700">Conectado</span>}</div>
                         <label htmlFor="rp-openai-key" className="mt-4 block text-xs font-semibold text-slate-600">Chave da API OpenAI</label>
                         <input id="rp-openai-key" type="password" autoComplete="off" value={openaiApiKey} onChange={(event) => { setOpenaiApiKey(event.target.value); setOpenaiConnected(false); }} placeholder="sk-..." className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100" />
                         <p className="mt-2 text-[11px] leading-5 text-slate-500">Alternativa ao Gemini. A API OpenAI tem cobrança separada da assinatura do ChatGPT. O site escolhe automaticamente OpenAI quando ela estiver conectada; caso contrário, usa Gemini.</p>
-                        <button onClick={handleTestOpenAI} disabled={testingOpenAI} className="mt-3 w-full rounded-xl bg-emerald-700 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-60">{testingOpenAI ? "Testando chave..." : "Conectar e testar OpenAI"}</button>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2"><button onClick={handleTestOpenAI} disabled={testingOpenAI} className="w-full rounded-xl bg-emerald-700 px-3 py-2.5 text-xs font-bold text-white hover:bg-emerald-800 disabled:opacity-60">{testingOpenAI ? "Testando chave..." : "Conectar e testar OpenAI"}</button><button onClick={disconnectOpenAI} disabled={!openaiApiKey && !openaiConnected} className="w-full rounded-xl border border-rose-200 px-3 py-2.5 text-xs font-bold text-rose-700 disabled:opacity-40">Desconectar chave</button></div>
                       </div>
 
                       <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-4 sm:col-span-2">
@@ -692,7 +720,7 @@ function LovableRpDemo() {
                         <label htmlFor="rp-openrouter-key" className="mt-3 block text-xs font-semibold text-slate-600">Chave da API OpenRouter</label>
                         <input id="rp-openrouter-key" type="password" autoComplete="off" value={openrouterApiKey} onChange={(event) => { setOpenrouterApiKey(event.target.value); setOpenrouterConnected(false); }} placeholder="sk-or-v1-..." className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-violet-400" />
                         <p className="mt-2 text-[11px] text-slate-500">Carrega os modelos disponíveis na API OpenRouter. O modelo escolhido será usado nas edições do GitHub.</p>
-                        <button onClick={handleTestOpenRouter} disabled={testingOpenRouter} className="mt-3 w-full rounded-xl bg-violet-700 px-3 py-2.5 text-xs font-bold text-white disabled:opacity-60">{testingOpenRouter ? "Carregando modelos..." : "Conectar e carregar modelos"}</button>
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2"><button onClick={handleTestOpenRouter} disabled={testingOpenRouter} className="w-full rounded-xl bg-violet-700 px-3 py-2.5 text-xs font-bold text-white disabled:opacity-60">{testingOpenRouter ? "Carregando modelos..." : "Conectar e carregar modelos"}</button><button onClick={disconnectOpenRouter} disabled={!openrouterApiKey && !openrouterConnected} className="w-full rounded-xl border border-rose-200 bg-white px-3 py-2.5 text-xs font-bold text-rose-700 disabled:opacity-40">Desconectar chave</button></div>
                       </div>
                       <div className="rounded-xl border border-slate-200 p-4 sm:col-span-2">
                         <h4 className="text-sm font-bold">Provedor e modelo usados nas edições</h4>
