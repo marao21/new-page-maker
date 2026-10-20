@@ -14,7 +14,7 @@ export function previewKind(files: Record<string, string>): "static" | "vite" {
 export async function loadRepositoryPreview(token: string, repository: string, branch: string, signal?: AbortSignal): Promise<RepositoryPreview> {
   if (!/^[\w.-]+\/[\w.-]+$/.test(repository)) throw new Error("Selecione um repositório válido.");
   const read = async (path: string) => {
-    const res = await fetch(`https://api.github.com/repos/${repository}${path}`, { signal, headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}` } });
+    const res = await fetch(`https://api.github.com/repos/${repository}${path}`, { signal: signal ?? null, headers: { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}` } });
     if (!res.ok) { const body = await res.json().catch(() => ({})); throw new Error(`GitHub ${res.status}: ${body.message || "Não foi possível carregar os arquivos."}`); }
     return res.json();
   };
@@ -48,7 +48,7 @@ export async function loadRepositoryPreview(token: string, repository: string, b
     if (Object.values(files).some(content => content.startsWith("data:"))) throw new Error("A prévia Vite ainda não suporta arquivos binários locais. Use uma URL de prévia desse projeto.");
     return { files, kind, revision };
   }
-  let html = files["/index.html"];
+  let html = files["/index.html"] || "";
   html = html.replace(/<link[^>]+href=["']([^"']+\.css)["'][^>]*>/gi, (tag, path) => {
     const css = files["/" + path.replace(/^\.?\//, "")];
     return css === undefined ? tag : `<style>${css.replace(/<\/style/gi, "<\\/style")}</style>`;
