@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useState, type ComponentProps } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentProps } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { isSupabaseConfigured, supabase } from "../integrations/supabase/client";
-import { LocalPreviewBuilder } from "../components/local-preview-builder";
+import { RepositoryPreviewPane } from "../components/repository-preview";
+import { Button } from "@/components/ui/button";
 import { createGitHubProject, executeGitHubEdit, listGitHubRepositories, listGeminiModels, listOpenAIModels, listOpenRouterModels, validateGeminiApiKey, validateOpenAIApiKey, validateGitHubToken, type AIModelOption, type AIProvider, type GitHubRepoOption } from "../lib/lovable-rp-engine";
 import {
   Activity,
@@ -42,7 +43,11 @@ export const Route = createFileRoute("/lovable-rp")({
   head: () => ({
     meta: [
       { title: "Lovable RP Web — Assistente de projetos" },
-      { name: "description", content: "Painel web da Lovable RP para gerenciar projetos e executar alterações no GitHub." },
+      { name: "description", content: "Crie e edite projetos GitHub com chat e prévia dos arquivos reais." },
+      { property: "og:title", content: "Lovable RP — Editor de projetos GitHub" },
+      { property: "og:description", content: "Crie e edite projetos GitHub com chat e prévia dos arquivos reais." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: LovableRpDemo,
@@ -69,7 +74,9 @@ const navItems = [
 ];
 
 function LovableRpDemo() {
-  const [activeNav, setActiveNav] = useState("Visão geral");
+  const [activeNav, setActiveNav] = useState("Comandos");
+  const executionLock = useRef(false);
+  const [previewRefresh, setPreviewRefresh] = useState(0);
   const [databaseStatus, setDatabaseStatus] = useState("Verificando Supabase");
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [projects, setProjects] = useState<Array<{ id: string; name: string; repository_full_name: string | null; branch: string; status: string }>>([]);
@@ -570,6 +577,7 @@ function LovableRpDemo() {
   }
 
   async function executeCommand() {
+    if (executionLock.current) return;
     const prompt = commandText.trim();
     if (!prompt) { setNotice("Descreva o projeto ou a alteração que deseja."); return; }
     const aiConnected = aiProvider === "openai" ? !!openaiApiKey.trim() && openaiConnected : aiProvider === "openrouter" ? !!openrouterApiKey.trim() && openrouterConnected : !!geminiApiKey.trim() && geminiConnected;
@@ -583,6 +591,7 @@ function LovableRpDemo() {
       setActiveNav("Projetos");
       return;
     }
+    executionLock.current = true;
     setExecuting(true);
     setExecutionProgress(commandMode === "new" ? "Planejando o novo projeto..." : "Analisando o pedido...");
     setNotice("");
@@ -616,12 +625,15 @@ function LovableRpDemo() {
         setActivity((current) => [{ id: result.commitSha, title: result.summary, detail: `${result.repository} · ${result.files.join(", ")}`, time: new Date().toLocaleString("pt-BR"), status: "Concluído" }, ...current]);
         setNotice(`Alteração gravada no GitHub: ${result.files.length} arquivo(s).`);
       }
+      setCommandText("");
+      setCommandMode("edit");
+      setPreviewRefresh(n => n + 1);
       setActiveNav("Comandos");
     } catch (error) {
       const message = error instanceof Error ? error.message : "Não foi possível concluir a tarefa.";
       setNotice(message);
       setAssistantReply({title:"Não foi possível concluir",summary:message,details:["Confira as conexões e permissões e tente novamente."],links:[]});
-    } finally { setExecuting(false); }
+    } finally { executionLock.current = false; setExecuting(false); }
   }
 
   const selectedRepoOption = repoOptions.find((repo) => repo.full_name === selectedRepository);
@@ -711,67 +723,54 @@ function LovableRpDemo() {
             </div>
           </header>
 
-          <div className="mx-auto max-w-[1440px] p-4 sm:p-7 lg:p-9">
-            <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+          <div className="mx-auto w-full p-4 sm:p-5">
+            <div className={activeNav === "Comandos" || activeNav === "Visão geral" ? "rp-workspace-heading" : "mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-end"}>
               <div><p className="mb-2 text-sm font-medium text-pink-600">Olá, Mário 👋</p><h2 className="text-2xl font-extrabold tracking-tight sm:text-3xl">O que vamos construir hoje?</h2><p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">{activeDescription}</p></div>
               <button onClick={() => { setCommandMode("new"); setCommandText(""); setNewProjectName("meu-novo-projeto"); setActiveNav("Comandos"); setAssistantReply(null); setNotice(githubToken && (aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "Descreva o projeto que deseja criar do zero." : "Antes de criar, conecte o GitHub e teste o provedor de IA em Conexões."); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-200 transition hover:bg-slate-700"><Plus className="h-4 w-4" /> Novo projeto</button>
             </div>
 
-            {activeNav === "Visão geral" && (
-              <section className="mb-7">
-                <div className="mb-4">
-                  <h3 className="text-lg font-bold">Crie e visualize antes de hospedar</h3>
-                  <p className="mt-1 text-sm leading-6 text-slate-500">Você não precisa ter Vercel, domínio ou repositório pronto. Descreva o site ou sistema, gere uma prévia local e ajuste o visual antes de publicar ou enviar os arquivos ao GitHub.</p>
-                </div>
-                <LocalPreviewBuilder githubToken={githubToken} repository={selectedRepository} branch={selectedBranch} />
-              </section>
-            )}
-            <section hidden={activeNav !== "Visão geral" && activeNav !== "Comandos"} className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-br from-[#24152f] via-[#3b1740] to-[#6d174e] p-5 text-white shadow-xl shadow-pink-100 sm:p-8">
-              <div className="pointer-events-none absolute -right-16 -top-28 h-72 w-72 rounded-full border-[42px] border-white/5" />
-              <div className="pointer-events-none absolute right-28 top-20 h-36 w-36 rounded-full bg-pink-500/20 blur-3xl" />
-              <div className="relative grid gap-7 lg:grid-cols-[1.3fr_0.7fr] lg:items-center">
-                <div><div className="mb-4 inline-flex items-center gap-2 rounded-full border border-pink-300/25 bg-white/10 px-3 py-1.5 text-xs font-semibold text-pink-100"><Zap className="h-3.5 w-3.5" /> SEU ASSISTENTE DE DESENVOLVIMENTO</div><h3 className="max-w-xl text-2xl font-extrabold leading-tight sm:text-3xl">Transforme suas ideias em tarefas executáveis.</h3><p className="mt-3 max-w-xl text-sm leading-6 text-pink-100/75">Descreva a alteração que você precisa. Aqui você poderá organizar pedidos, projetos e resultados em um só lugar.</p>
-                  <div className="mt-6 flex flex-wrap gap-2"><span className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/85"><Code2 className="mr-1.5 inline h-3.5 w-3.5" /> Código</span><span className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/85"><Github className="mr-1.5 inline h-3.5 w-3.5" /> GitHub</span><span className="rounded-lg bg-white/10 px-3 py-2 text-xs text-white/85"><Sparkles className="mr-1.5 inline h-3.5 w-3.5" /> Automação</span></div>
-                </div>
-                <div className="rounded-2xl border border-white/15 bg-white/[0.08] p-4 backdrop-blur-sm sm:p-5">
-                  <div className="mb-4 rounded-xl border border-white/15 bg-white/[0.07] p-3">
+            {(activeNav === "Visão geral" || activeNav === "Comandos") && <div className="rp-editor mb-6">
+              <section aria-label="Chat do projeto" className="rp-chat min-w-0 text-foreground">
+                <div className="mb-5 flex items-center gap-2"><MessageSquareText className="h-5 w-5 text-primary"/><h2 className="font-bold">Chat do projeto</h2></div>
+                  <div className="mb-4 rounded-xl border border-border bg-background/[0.07] p-3">
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                      <div><p className="text-xs font-bold text-white">IA que vai executar esta tarefa</p><p className="mt-1 text-[11px] text-pink-100/70">Escolha o provedor e o modelo antes de enviar o pedido.</p></div>
-                      <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "bg-emerald-400/15 text-emerald-200" : "bg-amber-300/15 text-amber-200"}`}>{(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "Conectada" : "Precisa conectar"}</span>
+                      <div><p className="text-xs font-bold text-muted">IA que vai executar esta tarefa</p><p className="mt-1 text-[11px] text-muted">Escolha o provedor e o modelo antes de enviar o pedido.</p></div>
+                      <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "bg-background text-muted" : "bg-background text-muted"}`}>{(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "Conectada" : "Precisa conectar"}</span>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <div>
-                        <label htmlFor="rp-command-ai-provider" className="mb-1 block text-[11px] font-semibold text-pink-100/80">Provedor de IA</label>
-                        <select id="rp-command-ai-provider" value={aiProvider} onChange={(event) => { const value = event.target.value as AIProvider; setAiProvider(value); window.sessionStorage.setItem("lovable-rp-web-ai-provider", value); const list = value === "openai" ? openaiModels : value === "openrouter" ? openrouterModels : geminiModelOptions; const nextModel = list[0]?.id || (value === "gemini" ? "gemini-3.8-flash" : value === "openai" ? "gpt-4.1-mini" : ""); setAiModel(nextModel); window.sessionStorage.setItem("lovable-rp-web-ai-model", nextModel); }} className="w-full rounded-lg border border-white/15 bg-[#32152f] px-3 py-2 text-xs text-white outline-none focus:border-pink-300">
+                        <label htmlFor="rp-command-ai-provider" className="mb-1 block text-[11px] font-semibold text-muted">Provedor de IA</label>
+                        <select id="rp-command-ai-provider" value={aiProvider} onChange={(event) => { const value = event.target.value as AIProvider; setAiProvider(value); window.sessionStorage.setItem("lovable-rp-web-ai-provider", value); const list = value === "openai" ? openaiModels : value === "openrouter" ? openrouterModels : geminiModelOptions; const nextModel = list[0]?.id || (value === "gemini" ? "gemini-3.8-flash" : value === "openai" ? "gpt-4.1-mini" : ""); setAiModel(nextModel); window.sessionStorage.setItem("lovable-rp-web-ai-model", nextModel); }} className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted outline-none focus:border-border">
                           <option value="gemini">Google Gemini</option><option value="openai">OpenAI (GPT)</option><option value="openrouter">OpenRouter</option>
                         </select>
                       </div>
                       <div>
-                        <label htmlFor="rp-command-ai-model" className="mb-1 block text-[11px] font-semibold text-pink-100/80">Modelo</label>
-                        <select id="rp-command-ai-model" value={aiModel} onChange={(event) => { setAiModel(event.target.value); window.sessionStorage.setItem("lovable-rp-web-ai-model", event.target.value); }} className="w-full rounded-lg border border-white/15 bg-[#32152f] px-3 py-2 text-xs text-white outline-none focus:border-pink-300" disabled={!(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected)}>
+                        <label htmlFor="rp-command-ai-model" className="mb-1 block text-[11px] font-semibold text-muted">Modelo</label>
+                        <select id="rp-command-ai-model" value={aiModel} onChange={(event) => { setAiModel(event.target.value); window.sessionStorage.setItem("lovable-rp-web-ai-model", event.target.value); }} className="w-full rounded-lg border border-border bg-card px-3 py-2 text-xs text-muted outline-none focus:border-border" disabled={!(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected)}>
                           {!(aiProvider === "gemini" ? geminiModelOptions : aiProvider === "openai" ? openaiModels : openrouterModels).length && <option value="" disabled>{(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "Nenhum modelo carregado — teste a conexão novamente" : "Conecte a IA para listar modelos"}</option>}
                           {(aiProvider === "gemini" ? geminiModelOptions : aiProvider === "openai" ? openaiModels : openrouterModels).map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
                         </select>
                       </div>
                     </div>
-                    {!(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) && <button type="button" onClick={() => setActiveNav("Conexões")} className="mt-2 text-[11px] font-bold text-pink-200 underline underline-offset-2">Conectar ou testar esta IA em Conexões</button>}
+                    {!(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) && <Button type="button" onClick={() => setActiveNav("Conexões")} className="mt-2 text-[11px] font-bold text-muted underline underline-offset-2">Conectar ou testar esta IA em Conexões</Button>}
                   </div>
-                  <div className="mb-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => { setCommandMode("edit"); setCommandText(""); }} className={`rounded-lg px-3 py-2 text-xs font-bold ${commandMode === "edit" ? "bg-pink-500 text-white" : "border border-white/15 text-white/80"}`}>Editar projeto existente</button>
-                    <button type="button" onClick={() => { setCommandMode("new"); setCommandText(""); }} className={`rounded-lg px-3 py-2 text-xs font-bold ${commandMode === "new" ? "bg-pink-500 text-white" : "border border-white/15 text-white/80"}`}>Criar projeto do zero</button>
+                  <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Modo do projeto">
+                    <Button type="button" disabled={executing} aria-pressed={commandMode === "edit"} variant={commandMode === "edit" ? "default" : "outline"} onClick={() => { setCommandMode("edit"); setCommandText(""); }} className="h-auto whitespace-normal text-xs">Editar projeto existente</Button>
+                    <Button type="button" disabled={executing} aria-pressed={commandMode === "new"} variant={commandMode === "new" ? "default" : "outline"} onClick={() => { setCommandMode("new"); setCommandText(""); }} className="h-auto whitespace-normal text-xs">Criar projeto do zero</Button>
                   </div>
-                  {commandMode === "new" && <div className="mb-4"><label htmlFor="rp-new-project-name" className="mb-2 block text-xs font-semibold">Nome do novo repositório</label><input id="rp-new-project-name" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="meu-projeto" className="w-full rounded-xl border border-white/15 bg-[#1c1025]/70 px-3 py-2.5 text-sm text-white outline-none focus:border-pink-300" /><p className="mt-1 text-[11px] text-pink-100/70">A IA vai decidir pelo pedido se o projeto precisa de integração Supabase.</p></div>}
+                  {commandMode === "edit" && <div className="mb-4 space-y-2"><label htmlFor="rp-editor-repository" className="block text-xs font-semibold">Repositório para editar</label><select id="rp-editor-repository" disabled={executing} value={selectedRepository} onChange={event => { const repo = repoOptions.find(r => r.full_name === event.target.value); if (!repo) return; setSelectedRepository(repo.full_name); setSelectedBranch(repo.default_branch); window.sessionStorage.setItem("lovable-rp-web-repository", repo.full_name); window.sessionStorage.setItem("lovable-rp-web-branch", repo.default_branch); }} className="w-full px-3 py-2 text-xs"><option value="">Selecione um repositório</option>{!repoOptions.some(r => r.full_name === selectedRepository) && selectedRepository && <option value={selectedRepository}>{selectedRepository}</option>}{repoOptions.map(repo => <option key={repo.full_name} value={repo.full_name}>{repo.full_name}</option>)}</select><label htmlFor="rp-editor-branch" className="block text-xs font-semibold">Branch</label><input id="rp-editor-branch" disabled={executing} value={selectedBranch} onChange={event => { setSelectedBranch(event.target.value); window.sessionStorage.setItem("lovable-rp-web-branch", event.target.value); }} className="w-full px-3 py-2 text-xs"/></div>}
+                  {commandMode === "new" && <div className="mb-4"><label htmlFor="rp-new-project-name" className="mb-2 block text-xs font-semibold">Nome do novo repositório</label><input id="rp-new-project-name" value={newProjectName} onChange={(event) => setNewProjectName(event.target.value)} placeholder="meu-projeto" className="w-full rounded-xl border border-border bg-card px-3 py-2.5 text-sm text-muted outline-none focus:border-border" /><p className="mt-1 text-[11px] text-muted">A IA vai decidir pelo pedido se o projeto precisa de integração Supabase.</p></div>}
                   <label htmlFor="rp-command" className="mb-3 block text-sm font-semibold">{commandMode === "new" ? "Descreva o aplicativo ou site que quer criar" : "Qual tarefa você quer realizar?"}</label>
-                  <textarea id="rp-command" value={commandText} onChange={(event) => setCommandText(event.target.value)} placeholder={commandMode === "new" ? "Ex.: Crie uma landing page moderna para uma pizzaria, com cardápio e botão para WhatsApp. Não precisa de banco de dados." : "Ex.: Altere a cor do botão principal para vermelho e verifique os arquivos afetados..."} className="min-h-32 w-full resize-y rounded-xl border border-white/15 bg-[#1c1025]/70 p-3 text-sm leading-6 text-white outline-none placeholder:text-white/40 focus:border-pink-300/70 focus:ring-2 focus:ring-pink-400/20" />
+                  <textarea id="rp-command" value={commandText} onChange={(event) => setCommandText(event.target.value)} placeholder={commandMode === "new" ? "Ex.: Crie uma landing page moderna para uma pizzaria, com cardápio e botão para WhatsApp. Não precisa de banco de dados." : "Ex.: Altere a cor do botão principal para vermelho e verifique os arquivos afetados..."} className="min-h-32 w-full resize-y rounded-xl border border-border bg-card p-3 text-sm leading-6 text-muted outline-none placeholder:text-muted focus:border-border focus:ring-2 focus:ring-pink-400/20" />
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => setCommandText("Crie uma nova página responsiva e profissional, integrada ao estilo visual existente. Analise os arquivos antes de alterar e preserve as funcionalidades atuais.")} className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-pink-100 hover:bg-white/10">＋ Criar página</button>
-                    <button type="button" onClick={() => setCommandText("Analise o projeto e implemente a melhoria que descrevi no campo principal, alterando somente os arquivos necessários e preservando o restante.")} className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-pink-100 hover:bg-white/10">✎ Editar projeto</button>
-                    <button type="button" onClick={() => setCommandText("Revise a autenticação do projeto usando Supabase Auth, com rotas protegidas, validações e mensagens de erro claras. Não exponha chaves privadas no frontend.")} className="rounded-lg border border-white/15 bg-white/5 px-3 py-2 text-xs font-semibold text-pink-100 hover:bg-white/10">⚙ Configurar autenticação</button>
+                    <Button type="button" onClick={() => setCommandText("Crie uma nova página responsiva e profissional, integrada ao estilo visual existente. Analise os arquivos antes de alterar e preserve as funcionalidades atuais.")} className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-muted hover:bg-background">＋ Criar página</Button>
+                    <Button type="button" onClick={() => setCommandText("Analise o projeto e implemente a melhoria que descrevi no campo principal, alterando somente os arquivos necessários e preservando o restante.")} className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-muted hover:bg-background">✎ Editar projeto</Button>
+                    <Button type="button" onClick={() => setCommandText("Revise a autenticação do projeto usando Supabase Auth, com rotas protegidas, validações e mensagens de erro claras. Não exponha chaves privadas no frontend.")} className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-semibold text-muted hover:bg-background">⚙ Configurar autenticação</Button>
                   </div>
-                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><span className="text-[11px] text-pink-100/70">{executionProgress || "GitHub + Gemini · execução real após conectar"}</span><button onClick={executeCommand} disabled={executing} className="inline-flex items-center justify-center gap-2 rounded-xl bg-pink-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-pink-950/30 transition hover:bg-pink-400 disabled:cursor-wait disabled:opacity-60"><Play className="h-4 w-4" /> {executing ? "Trabalhando..." : commandMode === "new" ? "Criar projeto" : "Executar alteração"}</button></div>
-                </div>
-              </div>
-            </section>
+                  <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><span className="text-[11px] text-muted">{executionProgress || `GitHub · ${aiProvider}`}</span><Button onClick={executeCommand} disabled={executing || !commandText.trim()} className="h-auto whitespace-normal px-4 py-2.5"><Play className="h-4 w-4" /> {executing ? "Trabalhando..." : commandMode === "new" ? "Criar projeto" : "Executar alteração"}</Button></div>
+              </section>
+              <RepositoryPreviewPane githubToken={githubToken} repository={commandMode === "new" ? "" : selectedRepository} branch={selectedBranch} refreshKey={previewRefresh}/>
+            </div>}
 
             {assistantReply && <section className="mb-6 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
               <div className="flex items-start gap-3"><div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-pink-100 text-pink-700"><Sparkles className="h-5 w-5" /></div><div className="min-w-0 flex-1"><h3 className="font-bold text-slate-900">{assistantReply.title}</h3><p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">{assistantReply.summary}</p>
@@ -819,7 +818,7 @@ function LovableRpDemo() {
                 )}
                 {activeNav === "Prévia" && (
                   <>
-                  <LocalPreviewBuilder githubToken={githubToken} repository={selectedRepository} branch={selectedBranch} />
+                  <RepositoryPreviewPane githubToken={githubToken} repository={selectedRepository} branch={selectedBranch} refreshKey={previewRefresh}/>
                   <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div><h3 className="font-bold">Prévia do projeto</h3><p className="mt-1 text-sm text-slate-500">Abra a versão publicada do seu projeto dentro deste painel.</p></div>
