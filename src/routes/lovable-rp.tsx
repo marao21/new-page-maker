@@ -147,6 +147,13 @@ function LovableRpDemo() {
       setOpenaiConnected(!!window.sessionStorage.getItem("lovable-rp-web-openai-key"));
       setGeminiConnected(!!window.sessionStorage.getItem("lovable-rp-web-gemini-key"));
       setOpenrouterConnected(!!window.sessionStorage.getItem("lovable-rp-web-openrouter-key"));
+      // Recarrega as listas de modelos das chaves salvas nesta sessão, para não deixar o seletor vazio após atualizar a página.
+      const savedGeminiKey = window.sessionStorage.getItem("lovable-rp-web-gemini-key") || "";
+      const savedOpenAIKey = window.sessionStorage.getItem("lovable-rp-web-openai-key") || "";
+      const savedOpenRouterKey = window.sessionStorage.getItem("lovable-rp-web-openrouter-key") || "";
+      if (savedGeminiKey) void listGeminiModels(savedGeminiKey).then((models) => { if (active) setGeminiModels(models); }).catch(() => {});
+      if (savedOpenAIKey) void listOpenAIModels(savedOpenAIKey).then((models) => { if (active) setOpenaiModels(models); }).catch(() => {});
+      if (savedOpenRouterKey) void listOpenRouterModels(savedOpenRouterKey).then((models) => { if (active) setOpenrouterModels(models); }).catch(() => {});
       setSelectedRepository(window.sessionStorage.getItem("lovable-rp-web-repository") || "marao21/new-page-maker");
       setSelectedBranch(window.sessionStorage.getItem("lovable-rp-web-branch") || "main");
       const savedPreview = window.sessionStorage.getItem("lovable-rp-web-preview-url") || "";
@@ -422,17 +429,23 @@ function LovableRpDemo() {
     if (!openaiApiKey.trim()) { setNotice("Cole sua chave da API OpenAI."); return; }
     setTestingOpenAI(true);
     try {
-      await validateOpenAIApiKey(openaiApiKey);
+      const models = await listOpenAIModels(openaiApiKey);
+      if (!models.length) throw new Error("A chave foi aceita, mas a API OpenAI não retornou modelos GPT compatíveis.");
+      setOpenaiModels(models);
+      const preferred = models.find((model) => model.id === "gpt-4.1-mini")
+        || models.find((model) => /gpt-4\.1-mini/i.test(model.id))
+        || models.find((model) => /^gpt-/i.test(model.id))
+        || models[0];
       setOpenaiConnected(true);
       setAiProvider("openai");
-      setAiModel("gpt-4.1-mini");
+      setAiModel(preferred.id);
       window.sessionStorage.setItem("lovable-rp-web-ai-provider", "openai");
-      window.sessionStorage.setItem("lovable-rp-web-ai-model", "gpt-4.1-mini");
+      window.sessionStorage.setItem("lovable-rp-web-ai-model", preferred.id);
       window.sessionStorage.setItem("lovable-rp-web-openai-key", openaiApiKey.trim());
-      setNotice("OpenAI API conectada e testada. A chave fica apenas nesta sessão do navegador.");
+      setNotice("OpenAI conectada. " + models.length + " modelos encontrados; escolha o modelo na lista.");
     } catch (error) {
       setOpenaiConnected(false);
-      setNotice(error instanceof Error ? error.message : "Não foi possível testar a chave OpenAI.");
+      setNotice(error instanceof Error ? error.message : "Não foi possível carregar os modelos OpenAI.");
     } finally { setTestingOpenAI(false); }
   }
 
