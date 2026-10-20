@@ -12,3 +12,5 @@
 <!-- LOVABLE:END -->
 
 - Registration classifies Supabase errors in a browser-safe helper and guards submissions synchronously; this prevents duplicate sends without retrying or bypassing provider quotas.
+- The editor uses a dedicated repository preview loader pinned to an immutable GitHub commit; static HTML runs sandboxed and Vite runs in a lazy-loaded Sandpack Node environment, never an AI reconstruction.
+- New GitHub projects validate the complete scaffold before creating a private initialized repository, then verify the branch after uploading; edit mode targets the selected repository and preserves its existing tree.

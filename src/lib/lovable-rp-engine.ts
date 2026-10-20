@@ -245,6 +245,23 @@ function parseJsonResponse<T>(value: unknown, label: string): T {
 }
 
 
+export function validateProjectFiles(value: unknown): Change[] {
+  if (!Array.isArray(value) || !value.length || value.length > 20) throw new Error("A IA deve retornar todos os arquivos do projeto, até 20 arquivos.");
+  const seen = new Set<string>();
+  const files: Change[] = [];
+  for (const file of value) {
+    if (!file || typeof file.path !== "string" || typeof file.content !== "string" || !file.content.trim() || !isAllowedTextPath(file.path, new TextEncoder().encode(file.content).length) || containsLikelySecret(file.content)) throw new Error("A IA retornou um arquivo inválido ou com credenciais. Nenhum repositório foi criado.");
+    if (seen.has(file.path)) throw new Error(`Arquivo duplicado: ${file.path}. Nenhum repositório foi criado.`);
+    seen.add(file.path); files.push(file);
+  }
+  for (const path of ["package.json", "index.html", "src/main.tsx", "src/App.tsx", "src/index.css"]) {
+    if (!seen.has(path)) throw new Error(`O projeto está incompleto: falta ${path}. Nenhum repositório foi criado.`);
+  }
+  const pkg = JSON.parse(files.find(f => f.path === "package.json")?.content || "{}");
+  if (!pkg.scripts?.dev || !pkg.scripts?.build || !pkg.dependencies?.react || !pkg.devDependencies?.vite && !pkg.dependencies?.vite) throw new Error("package.json incompleto: faltam comandos ou dependências React/Vite.");
+  return files;
+}
+
 export async function createGitHubProject(args: {
   githubToken: string;
   aiProvider: AIProvider;
@@ -272,29 +289,34 @@ export async function createGitHubProject(args: {
       "Decida com critério: páginas estáticas, landing pages e sites institucionais simples normalmente NÃO precisam de Supabase. Login, dados persistentes, painel, marketplace, cadastro, pedidos ou banco de dados normalmente precisam. Não adicione chaves secretas. Gere arquivos completos, no máximo 20 arquivos e 180000 caracteres por arquivo. Gere um projeto Vite + React + TypeScript funcional com package.json, index.html, src/main.tsx, src/App.tsx e src/index.css. Se precisar de Supabase, inclua a dependência e integração por variáveis VITE_SUPABASE_URL e VITE_SUPABASE_ANON_KEY, mas não invente credenciais nem suponha que o projeto Supabase já existe.",
       "NOME DO REPOSITÓRIO: " + repoName,
       "PEDIDO DO USUÁRIO: " + args.request,
-    ].join("\\n\\n"), args.aiModel),
+    ].join("\n\n"), args.aiModel),
     "o plano do novo projeto"
   );
-  if (!Array.isArray(plan.files) || !plan.files.length) throw new Error("A IA não retornou os arquivos do novo projeto.");
-  if (plan.files.length > 20) throw new Error("O projeto retornou arquivos demais. Reduza o escopo e tente novamente.");
+  const files = validateProjectFiles(plan.files);
   progress("Criando repositório " + repoName + " no GitHub...");
   const repo = await githubRequest<any>(token, "/user/repos", {
     method: "POST",
-    body: JSON.stringify({ name: repoName, description: String(plan.description || args.request).slice(0, 300), private: true, auto_init: false }),
+    body: JSON.stringify({ name: repoName, description: String(plan.description || args.request).slice(0, 300), private: true, auto_init: true }),
   });
   const fullName = String(repo.full_name);
   const branch = String(repo.default_branch || "main");
-  const files = plan.files.filter((file) => file && typeof file.path === "string" && typeof file.content === "string" && file.path.length < 240 && !file.path.startsWith("/") && !file.path.split("/").includes(".."));
-  if (!files.length) throw new Error("A IA não gerou arquivos seguros para gravar.");
+  try {
+  const initial = await githubRequest<any>(token, `/repos/${fullName}/branches/${encodeURIComponent(branch)}`);
+  const initialSha = initial.commit.sha;
   progress("Gravando " + files.length + " arquivos iniciais no novo repositório...");
   const blobs = await Promise.all(files.map(async (file) => {
     const blob = await githubRequest<any>(token, "/repos/" + fullName + "/git/blobs", { method: "POST", body: JSON.stringify({ content: file.content, encoding: "utf-8" }) });
     return { path: file.path, mode: "100644", type: "blob", sha: blob.sha };
   }));
   const tree = await githubRequest<any>(token, "/repos/" + fullName + "/git/trees", { method: "POST", body: JSON.stringify({ tree: blobs }) });
-  const commit = await githubRequest<any>(token, "/repos/" + fullName + "/git/commits", { method: "POST", body: JSON.stringify({ message: "feat: scaffold new project", tree: tree.sha, parents: [] }) });
-  await githubRequest<any>(token, "/repos/" + fullName + "/git/refs", { method: "POST", body: JSON.stringify({ ref: "refs/heads/" + branch, sha: commit.sha }) });
+  const commit = await githubRequest<any>(token, "/repos/" + fullName + "/git/commits", { method: "POST", body: JSON.stringify({ message: "feat: scaffold new project", tree: tree.sha, parents: [initialSha] }) });
+  await githubRequest<any>(token, `/repos/${fullName}/git/refs/heads/${encodeURIComponent(branch)}`, { method: "PATCH", body: JSON.stringify({ sha: commit.sha, force: false }) });
+  const verified = await githubRequest<any>(token, `/repos/${fullName}/branches/${encodeURIComponent(branch)}`);
+  if (verified.commit?.sha !== commit.sha) throw new Error("O commit não foi confirmado na branch.");
   return { repository: fullName, branch, commitSha: commit.sha, commitUrl: "https://github.com/" + fullName + "/commit/" + commit.sha, repoUrl: String(repo.html_url), summary: String(plan.summary || "Projeto inicial criado."), files: files.map((file) => file.path), needsSupabase: !!plan.needsSupabase, supabaseReason: String(plan.reason || "") };
+  } catch (error) {
+    throw new Error(`O repositório foi criado em ${repo.html_url}, mas não foi possível confirmar todos os arquivos. Selecione esse repositório para continuar; não crie outro com o mesmo nome. ${error instanceof Error ? error.message : "Falha no GitHub."}`);
+  }
 }
 
 async function scaffoldEmptyRepository(args: {
@@ -421,13 +443,16 @@ export async function executeGitHubEdit(args: {
     ].join("\n\n"), args.aiModel),
     "as alterações",
   );
-  const changes = Array.isArray(generated.changes) ? generated.changes.slice(0, MAX_PATCH_FILES) : [];
+  if (Array.isArray(generated.changes) && generated.changes.length > MAX_PATCH_FILES) throw new Error("A IA retornou mais de 10 alterações. Nenhum arquivo foi salvo; divida o pedido em etapas.");
+  const changes = Array.isArray(generated.changes) ? generated.changes : [];
   if (!changes.length) throw new Error(generated.summary || "A IA não propôs nenhuma alteração.");
   const seen = new Set<string>();
   for (const change of changes) {
     if (!change || typeof change.path !== "string" || typeof change.content !== "string") throw new Error("A IA retornou uma alteração de arquivo inválida.");
     if (!isAllowedTextPath(change.path, new TextEncoder().encode(change.content).length)) throw new Error(`O caminho ${change.path} não é permitido para edição automática.`);
     if (seen.has(change.path)) throw new Error(`A IA retornou o arquivo ${change.path} mais de uma vez.`);
+    if (tree.some(entry => entry.path === change.path) && !selectedFiles.some(file => file.path === change.path)) throw new Error(`A IA tentou substituir ${change.path} sem ler o arquivo. Nenhuma alteração foi salva.`);
+    if (containsLikelySecret(change.content)) throw new Error("A IA retornou possíveis credenciais. Nenhum arquivo foi salvo.");
     seen.add(change.path);
     if (change.content.length > 180000) throw new Error(`O arquivo ${change.path} ultrapassa o limite de tamanho.`);
   }
