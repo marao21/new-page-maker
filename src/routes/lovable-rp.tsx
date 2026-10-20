@@ -87,6 +87,9 @@ function LovableRpDemo() {
   const [assistantReply, setAssistantReply] = useState<{title:string;summary:string;details:string[];links:Array<{label:string;url:string}>;needsSupabase?:boolean;supabaseReason?:string}|null>(null);
   const [previewUrl, setPreviewUrl] = useState("");
   const [previewInput, setPreviewInput] = useState("");
+  const [githubPreviewHtml, setGithubPreviewHtml] = useState("");
+  const [githubPreviewLoading, setGithubPreviewLoading] = useState(false);
+  const [githubPreviewMessage, setGithubPreviewMessage] = useState("");
   const [githubToken, setGithubToken] = useState("");
   const [geminiApiKey, setGeminiApiKey] = useState("");
   const [openaiApiKey, setOpenaiApiKey] = useState("");
@@ -478,6 +481,56 @@ function LovableRpDemo() {
     } finally { setTestingOpenRouter(false); }
   }
 
+  async function loadGithubSourcePreview() {
+    if (!githubToken || !selectedRepository) {
+      setGithubPreviewMessage("Conecte o GitHub e selecione um repositório para carregar a prévia.");
+      return;
+    }
+    setGithubPreviewLoading(true);
+    setGithubPreviewMessage("");
+    setGithubPreviewHtml("");
+    try {
+      const headers = { Accept: "application/vnd.github+json", Authorization: "Bearer " + githubToken, "X-GitHub-Api-Version": "2022-11-28" };
+      const base = "https://api.github.com/repos/" + selectedRepository;
+      const branch = encodeURIComponent(selectedBranch || "main");
+      const response = await fetch(base + "/contents/index.html?ref=" + branch, { headers });
+      const file = await response.json().catch(() => ({}));
+      if (!response.ok || typeof file.content !== "string") {
+        throw new Error(response.status === 404
+          ? "Não encontrei index.html nesta branch. Se for um projeto React/Vite, use a URL publicada para visualizar a aplicação completa."
+          : (file.message || "Não foi possível ler index.html do GitHub."));
+      }
+      const bytes = Uint8Array.from(atob(file.content.replace(/\s/g, "")), (character) => character.charCodeAt(0));
+      let html = new TextDecoder().decode(bytes);
+      const cssLinks = [...html.matchAll(/<link\b[^>]*rel=["'][^"']*stylesheet[^"']*["'][^>]*>/gi)].slice(0, 8);
+      for (const match of cssLinks) {
+        const href = match[0].match(/\bhref=["']([^"']+)["']/i)?.[1];
+        if (!href || /^(https?:)?\/\//i.test(href) || href.startsWith("data:")) continue;
+        const path = href.replace(/^\.\//, "").replace(/^\/+/, "");
+        try {
+          const cssResponse = await fetch(base + "/contents/" + path.split("/").map(encodeURIComponent).join("/") + "?ref=" + branch, { headers });
+          const cssFile = await cssResponse.json().catch(() => ({}));
+          if (cssResponse.ok && typeof cssFile.content === "string") {
+            const cssBytes = Uint8Array.from(atob(cssFile.content.replace(/\s/g, "")), (character) => character.charCodeAt(0));
+            const cssText = new TextDecoder().decode(cssBytes);
+            html = html.replace(match[0], "<style>\n" + cssText.replace(/<\/style/gi, "<\\/style") + "\n</style>");
+          }
+        } catch { /* CSS indisponível: ainda tenta exibir o HTML */ }
+      }
+      const hasBundlerEntry = /<script[^>]+src=["'][^"']*(?:\/src\/|assets\/index-|\.tsx?)(?:[^"']*)["'][^>]*>/i.test(html);
+      if (hasBundlerEntry) {
+        setGithubPreviewMessage("O index.html foi encontrado, mas este projeto usa JavaScript compilado (por exemplo, React/Vite). O navegador não consegue executar o sistema completo diretamente do código-fonte. Publique o projeto ou informe a URL de prévia abaixo.");
+      } else {
+        setGithubPreviewHtml(html);
+        setGithubPreviewMessage("Prévia HTML carregada do GitHub. Recursos externos e arquivos que não sejam CSS vinculado podem não aparecer.");
+      }
+    } catch (error) {
+      setGithubPreviewMessage(error instanceof Error ? error.message : "Falha ao carregar a prévia do GitHub.");
+    } finally {
+      setGithubPreviewLoading(false);
+    }
+  }
+
   async function executeCommand() {
     const prompt = commandText.trim();
     if (!prompt) { setNotice("Descreva o projeto ou a alteração que deseja."); return; }
@@ -723,13 +776,19 @@ function LovableRpDemo() {
                   <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div><h3 className="font-bold">Prévia do projeto</h3><p className="mt-1 text-sm text-slate-500">Abra a versão publicada do seu projeto dentro deste painel.</p></div>
-                      {previewUrl && <button onClick={() => { const frame = document.getElementById("rp-project-preview") as HTMLIFrameElement | null; if (frame) frame.src = previewUrl; }} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold hover:bg-slate-50"><Play className="h-3.5 w-3.5" /> Atualizar prévia</button>}
+                      <div className="flex flex-wrap gap-2"><button type="button" onClick={() => void loadGithubSourcePreview()} disabled={githubPreviewLoading} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold hover:bg-slate-50 disabled:opacity-60"><Play className="h-3.5 w-3.5" /> {githubPreviewLoading ? "Carregando GitHub..." : "Prévia do GitHub"}</button>{previewUrl && <button onClick={() => { const frame = document.getElementById("rp-project-preview") as HTMLIFrameElement | null; if (frame) frame.src = previewUrl; }} className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-xs font-bold hover:bg-slate-50"><Play className="h-3.5 w-3.5" /> Atualizar site publicado</button>}</div>
                     </div>
                     <form onSubmit={(event) => { event.preventDefault(); const raw = previewInput.trim(); if (!raw) { setNotice("Cole o endereço publicado do seu projeto."); return; } let parsed: URL; try { parsed = new URL(raw.startsWith("http://") || raw.startsWith("https://") ? raw : "https://" + raw); } catch { setNotice("Esse endereço não parece válido. Use a URL publicada do Lovable ou Vercel."); return; } if (!["https:", "http:"].includes(parsed.protocol)) { setNotice("Use um endereço HTTP ou HTTPS válido."); return; } setPreviewUrl(parsed.toString()); setPreviewInput(parsed.toString()); window.sessionStorage.setItem("lovable-rp-web-preview-url", parsed.toString()); setNotice("Endereço da prévia salvo nesta sessão."); }} className="flex flex-col gap-2 sm:flex-row">
                       <input aria-label="URL publicada do projeto" value={previewInput} onChange={(event) => setPreviewInput(event.target.value)} placeholder="https://seu-projeto.lovable.app ou https://seu-projeto.vercel.app" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-3 text-sm outline-none focus:border-pink-400 focus:ring-2 focus:ring-pink-100" />
                       <button type="submit" className="rounded-xl bg-pink-600 px-5 py-3 text-sm font-bold text-white hover:bg-pink-700">Abrir dentro do site</button>
                     </form>
-                    {previewUrl ? (
+                    {githubPreviewMessage && <p className="mt-3 rounded-xl border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-600">{githubPreviewMessage}</p>}
+                    {githubPreviewHtml ? (
+                      <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-white">
+                        <div className="border-b border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600">Código-fonte renderizado: {selectedRepository} · {selectedBranch}</div>
+                        <iframe title="Prévia HTML carregada do GitHub" srcDoc={githubPreviewHtml} sandbox="allow-scripts allow-forms allow-popups" className="h-[70vh] min-h-[480px] w-full bg-white" />
+                      </div>
+                    ) : previewUrl ? (
                       <div className="mt-4 overflow-hidden rounded-xl border border-slate-200 bg-slate-50">
                         <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-3 py-2"><p className="min-w-0 truncate text-xs text-slate-500">{previewUrl}</p><button onClick={() => { setPreviewUrl(""); setPreviewInput(""); window.sessionStorage.removeItem("lovable-rp-web-preview-url"); }} className="shrink-0 rounded-md px-2 py-1 text-xs font-semibold text-slate-500 hover:bg-slate-100">Limpar</button></div>
                         <iframe id="rp-project-preview" title="Prévia do projeto selecionado" src={previewUrl} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-downloads" className="h-[70vh] min-h-[480px] w-full bg-white" />
