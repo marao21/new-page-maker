@@ -497,7 +497,7 @@ function LovableRpDemo() {
       const file = await response.json().catch(() => ({}));
       if (!response.ok || typeof file.content !== "string") {
         throw new Error(response.status === 404
-          ? "Não encontrei index.html nesta branch. Se for um projeto React/Vite, use a URL publicada para visualizar a aplicação completa."
+          ? "O repositório não tem index.html na raiz desta branch. Isso é comum em projetos que não são HTML estático. Informe a URL publicada acima para exibir o sistema completo; a fonte React/Vite precisa ser compilada."
           : (file.message || "Não foi possível ler index.html do GitHub."));
       }
       const bytes = Uint8Array.from(atob(file.content.replace(/\s/g, "")), (character) => character.charCodeAt(0));
@@ -694,6 +694,23 @@ function LovableRpDemo() {
                     </div>
                     <button type="button" onClick={() => setActiveNav("Prévia")} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold hover:bg-slate-50">Abrir prévia completa</button>
                   </div>
+                  <form onSubmit={(event) => {
+                    event.preventDefault();
+                    const raw = previewInput.trim();
+                    if (!raw) { setNotice("Informe a URL publicada do projeto para mostrar o sistema completo."); return; }
+                    let parsed: URL;
+                    try { parsed = new URL(raw.startsWith("http://") || raw.startsWith("https://") ? raw : "https://" + raw); }
+                    catch { setNotice("Informe uma URL válida, por exemplo https://seu-projeto.vercel.app"); return; }
+                    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") { setNotice("Use uma URL HTTP ou HTTPS."); return; }
+                    setPreviewUrl(parsed.toString());
+                    setPreviewInput(parsed.toString());
+                    setGithubPreviewHtml("");
+                    setGithubPreviewMessage("Versão publicada selecionada para prévia.");
+                    window.sessionStorage.setItem("lovable-rp-web-preview-url", parsed.toString());
+                  }} className="mb-3 flex flex-col gap-2 sm:flex-row">
+                    <input aria-label="URL publicada para prévia na tela inicial" value={previewInput} onChange={(event) => setPreviewInput(event.target.value)} placeholder="URL publicada: https://seu-projeto.vercel.app" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400" />
+                    <button type="submit" className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold hover:bg-slate-50">Mostrar site publicado</button>
+                  </form>
                   <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
                     <div>
                       <label htmlFor="rp-overview-repository" className="mb-1 block text-xs font-semibold text-slate-600">Repositório GitHub</label>
@@ -735,7 +752,7 @@ function LovableRpDemo() {
                   <div className="flex min-h-[230px] flex-col items-center justify-center px-5 py-8 text-center">
                     <div className="mb-3 rounded-xl bg-pink-50 p-3 text-pink-600"><Play className="h-6 w-6" /></div>
                     <p className="font-semibold">A prévia do seu projeto aparecerá aqui</p>
-                    <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">{githubToken ? "Selecione o repositório e clique em Atualizar prévia. Projetos React/Vite precisam ser compilados ou publicados para mostrar o sistema completo." : "Conecte o GitHub em Conexões para carregar os repositórios."}</p>
+                    <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">{githubToken ? "Escolha o repositório e clique em Atualizar prévia para tentar ler o HTML. Para sistemas React/Vite, informe a URL publicada acima: o código-fonte do GitHub não pode ser executado diretamente nesta janela." : "Conecte o GitHub em Conexões para carregar os repositórios. Você também pode informar a URL publicada acima."}</p>
                   </div>
                 )}
               </section>
