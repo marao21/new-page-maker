@@ -362,7 +362,7 @@ export async function executeGitHubEdit(args: {
     const branches = await githubRequest<any[]>(token, `/repos/${repo}/branches?per_page=100`);
     if (Array.isArray(branches) && branches.length === 0) {
       const initialBranch = String(existingRepo.default_branch || branch || "main");
-      return scaffoldEmptyRepository({ token, provider, apiKey, model: args.aiModel, repository: repo, request, branch: initialBranch, progress });
+      return scaffoldEmptyRepository({ token, provider, apiKey, model: args.aiModel || "", repository: repo, request, branch: initialBranch, progress });
     }
     throw new Error("A branch '" + branch + "' não existe no repositório " + repo + ". Selecione uma branch existente em Conexões ou use Criar projeto do zero. O repositório não está vazio, por isso não foi alterado.");
   }
