@@ -586,6 +586,11 @@ function LovableRpDemo() {
     } finally { setExecuting(false); }
   }
 
+  useEffect(() => {
+    if (activeNav !== "Visão geral" || !githubToken || !selectedRepository || !selectedBranch) return;
+    void loadGithubSourcePreview();
+  }, [activeNav, githubToken, selectedRepository, selectedBranch]);
+
   const selectedRepoOption = repoOptions.find((repo) => repo.full_name === selectedRepository);
   const currentProject = projects[0] ?? (selectedRepoOption ? { id: "github", name: selectedRepoOption.name, repository_full_name: selectedRepoOption.full_name, branch: selectedBranch || selectedRepoOption.default_branch, status: "active" } : { id: "empty", name: "Nenhum projeto conectado", repository_full_name: null, branch: "—", status: "empty" });
   const projectCount = databaseStatus === "Supabase conectado" ? projects.length : repoOptions.length ? 1 : 0;
@@ -681,16 +686,44 @@ function LovableRpDemo() {
 
             {activeNav === "Visão geral" && (
               <section className="mb-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4 sm:p-5">
-                  <div>
-                    <h3 className="font-bold">Prévia do sistema</h3>
-                    <p className="mt-1 text-sm text-slate-500">Visualize aqui o HTML do repositório selecionado ou a versão publicada do seu projeto.</p>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <button type="button" onClick={() => void loadGithubSourcePreview()} disabled={githubPreviewLoading || !githubToken || !selectedRepository} className="rounded-xl bg-pink-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50">
-                      {githubPreviewLoading ? "Carregando..." : "Carregar do GitHub"}
-                    </button>
+                <div className="border-b border-slate-100 p-4 sm:p-5">
+                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <h3 className="font-bold">Prévia do sistema</h3>
+                      <p className="mt-1 text-sm text-slate-500">Escolha o repositório e a branch. A prévia será carregada aqui.</p>
+                    </div>
                     <button type="button" onClick={() => setActiveNav("Prévia")} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold hover:bg-slate-50">Abrir prévia completa</button>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
+                    <div>
+                      <label htmlFor="rp-overview-repository" className="mb-1 block text-xs font-semibold text-slate-600">Repositório GitHub</label>
+                      <select id="rp-overview-repository" value={selectedRepository} onChange={(event) => {
+                        const repo = repoOptions.find((item) => item.full_name === event.target.value);
+                        setSelectedRepository(event.target.value);
+                        setSelectedBranch(repo?.default_branch || "main");
+                        setGithubPreviewHtml("");
+                        setGithubPreviewMessage("");
+                        window.sessionStorage.setItem("lovable-rp-web-repository", event.target.value);
+                        window.sessionStorage.setItem("lovable-rp-web-branch", repo?.default_branch || "main");
+                      }} disabled={!githubToken || !repoOptions.length} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-pink-400 disabled:bg-slate-50">
+                        <option value="">{githubToken ? "Selecione um repositório" : "Conecte o GitHub primeiro"}</option>
+                        {repoOptions.map((repo) => <option key={repo.full_name} value={repo.full_name}>{repo.full_name}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="rp-overview-branch" className="mb-1 block text-xs font-semibold text-slate-600">Branch</label>
+                      <input id="rp-overview-branch" value={selectedBranch} onChange={(event) => {
+                        setSelectedBranch(event.target.value);
+                        setGithubPreviewHtml("");
+                        setGithubPreviewMessage("");
+                        window.sessionStorage.setItem("lovable-rp-web-branch", event.target.value);
+                      }} placeholder="main" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400" />
+                    </div>
+                    <div className="flex items-end">
+                      <button type="button" onClick={() => void loadGithubSourcePreview()} disabled={githubPreviewLoading || !githubToken || !selectedRepository || !selectedBranch} className="w-full rounded-xl bg-pink-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50">
+                        {githubPreviewLoading ? "Carregando..." : "Atualizar prévia"}
+                      </button>
+                    </div>
                   </div>
                 </div>
                 {githubPreviewMessage && <p className="border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">{githubPreviewMessage}</p>}
@@ -702,7 +735,7 @@ function LovableRpDemo() {
                   <div className="flex min-h-[230px] flex-col items-center justify-center px-5 py-8 text-center">
                     <div className="mb-3 rounded-xl bg-pink-50 p-3 text-pink-600"><Play className="h-6 w-6" /></div>
                     <p className="font-semibold">A prévia do seu projeto aparecerá aqui</p>
-                    <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">{githubToken ? "Clique em Carregar do GitHub para buscar o index.html da branch selecionada. Projetos React/Vite precisam ser compilados ou publicados para mostrar o sistema completo." : "Conecte o GitHub em Conexões e selecione um repositório para carregar a prévia."}</p>
+                    <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">{githubToken ? "Selecione o repositório e clique em Atualizar prévia. Projetos React/Vite precisam ser compilados ou publicados para mostrar o sistema completo." : "Conecte o GitHub em Conexões para carregar os repositórios."}</p>
                   </div>
                 )}
               </section>
