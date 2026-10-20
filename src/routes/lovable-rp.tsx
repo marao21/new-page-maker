@@ -679,6 +679,34 @@ function LovableRpDemo() {
               <button onClick={() => { setCommandMode("new"); setCommandText(""); setNewProjectName("meu-novo-projeto"); setActiveNav("Comandos"); setAssistantReply(null); setNotice(githubToken && (aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "Descreva o projeto que deseja criar do zero." : "Antes de criar, conecte o GitHub e teste o provedor de IA em Conexões."); }} className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-slate-200 transition hover:bg-slate-700"><Plus className="h-4 w-4" /> Novo projeto</button>
             </div>
 
+            {activeNav === "Visão geral" && (
+              <section className="mb-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 p-4 sm:p-5">
+                  <div>
+                    <h3 className="font-bold">Prévia do sistema</h3>
+                    <p className="mt-1 text-sm text-slate-500">Visualize aqui o HTML do repositório selecionado ou a versão publicada do seu projeto.</p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button type="button" onClick={() => void loadGithubSourcePreview()} disabled={githubPreviewLoading || !githubToken || !selectedRepository} className="rounded-xl bg-pink-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50">
+                      {githubPreviewLoading ? "Carregando..." : "Carregar do GitHub"}
+                    </button>
+                    <button type="button" onClick={() => setActiveNav("Prévia")} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold hover:bg-slate-50">Abrir prévia completa</button>
+                  </div>
+                </div>
+                {githubPreviewMessage && <p className="border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">{githubPreviewMessage}</p>}
+                {githubPreviewHtml ? (
+                  <iframe title="Prévia do sistema a partir do GitHub" srcDoc={githubPreviewHtml} sandbox="allow-scripts allow-forms allow-popups" className="h-[65vh] min-h-[420px] w-full bg-white" />
+                ) : previewUrl ? (
+                  <iframe title="Prévia publicada do sistema" src={previewUrl} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-downloads" className="h-[65vh] min-h-[420px] w-full bg-white" />
+                ) : (
+                  <div className="flex min-h-[230px] flex-col items-center justify-center px-5 py-8 text-center">
+                    <div className="mb-3 rounded-xl bg-pink-50 p-3 text-pink-600"><Play className="h-6 w-6" /></div>
+                    <p className="font-semibold">A prévia do seu projeto aparecerá aqui</p>
+                    <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">{githubToken ? "Clique em Carregar do GitHub para buscar o index.html da branch selecionada. Projetos React/Vite precisam ser compilados ou publicados para mostrar o sistema completo." : "Conecte o GitHub em Conexões e selecione um repositório para carregar a prévia."}</p>
+                  </div>
+                )}
+              </section>
+            )}
             <section hidden={activeNav !== "Visão geral" && activeNav !== "Comandos"} className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-br from-[#24152f] via-[#3b1740] to-[#6d174e] p-5 text-white shadow-xl shadow-pink-100 sm:p-8">
               <div className="pointer-events-none absolute -right-16 -top-28 h-72 w-72 rounded-full border-[42px] border-white/5" />
               <div className="pointer-events-none absolute right-28 top-20 h-36 w-36 rounded-full bg-pink-500/20 blur-3xl" />
