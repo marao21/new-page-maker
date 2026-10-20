@@ -294,6 +294,35 @@ export async function createGitHubProject(args: {
   return { repository: fullName, branch, commitSha: commit.sha, commitUrl: "https://github.com/" + fullName + "/commit/" + commit.sha, repoUrl: String(repo.html_url), summary: String(plan.summary || "Projeto inicial criado."), files: files.map((file) => file.path), needsSupabase: !!plan.needsSupabase, supabaseReason: String(plan.reason || "") };
 }
 
+async function scaffoldEmptyRepository(args: {
+  token: string; provider: AIProvider; apiKey: string; model?: string; repository: string; request: string; branch: string; progress: (message: string) => void;
+}) {
+  args.progress("O repositório está vazio. A IA vai criar a estrutura completa do projeto...");
+  const plan = parseJsonResponse<{ files: Array<{ path: string; content: string }>; summary?: string; commitMessage?: string }>(
+    await callAI(args.provider, args.apiKey, [
+      "Você é um agente de engenharia de software responsável por criar um projeto web COMPLETO do zero dentro de um repositório GitHub existente e vazio.",
+      'Responda somente JSON válido: {"summary":"resumo em português","commitMessage":"mensagem de commit","files":[{"path":"caminho/arquivo","content":"conteúdo completo"}]}.',
+      "Gere todos os arquivos necessários para que o pedido funcione, não apenas instruções. Por padrão use Vite + React + TypeScript, package.json, index.html, src/main.tsx, src/App.tsx, src/index.css e configuração necessária. Inclua telas, componentes, navegação, validações e arquivos de configuração relevantes ao pedido. Para sistemas com login/dados, prepare integração com Supabase via variáveis de ambiente, sem inventar credenciais. Não inclua .env, tokens, segredos ou arquivos de lock. Gere no máximo 25 arquivos, cada arquivo com até 180000 caracteres.",
+      "REPOSITÓRIO: " + args.repository,
+      "PEDIDO DO USUÁRIO: " + args.request,
+    ].join("\n\n"), args.model),
+    "os arquivos do projeto",
+  );
+  if (!Array.isArray(plan.files) || !plan.files.length) throw new Error("A IA não gerou os arquivos necessários para iniciar o projeto.");
+  if (plan.files.length > 25) throw new Error("O projeto retornou mais de 25 arquivos. Divida o pedido em etapas.");
+  const files = plan.files.filter((file) => file && typeof file.path === "string" && typeof file.content === "string" && file.path.length < 240 && !file.path.startsWith("/") && !file.path.split("/").includes("..") && !/(^|\/)(\.env(?:\.|$)|secrets?\.)/i.test(file.path));
+  if (!files.length) throw new Error("A IA não retornou arquivos válidos para o repositório.");
+  args.progress("Gravando " + files.length + " arquivos iniciais no GitHub...");
+  const blobs = await Promise.all(files.map(async (file) => {
+    const blob = await githubRequest<any>(args.token, "/repos/" + args.repository + "/git/blobs", { method: "POST", body: JSON.stringify({ content: file.content, encoding: "utf-8" }) });
+    return { path: file.path, mode: "100644", type: "blob", sha: blob.sha };
+  }));
+  const tree = await githubRequest<any>(args.token, "/repos/" + args.repository + "/git/trees", { method: "POST", body: JSON.stringify({ tree: blobs }) });
+  const commit = await githubRequest<any>(args.token, "/repos/" + args.repository + "/git/commits", { method: "POST", body: JSON.stringify({ message: String(plan.commitMessage || "feat: create initial project").slice(0, 120), tree: tree.sha, parents: [] }) });
+  await githubRequest<any>(args.token, "/repos/" + args.repository + "/git/refs", { method: "POST", body: JSON.stringify({ ref: "refs/heads/" + args.branch, sha: commit.sha }) });
+  return { summary: String(plan.summary || "Projeto criado do zero no repositório existente."), commitSha: String(commit.sha), commitUrl: "https://github.com/" + args.repository + "/commit/" + commit.sha, repository: args.repository, branch: args.branch, files: files.map((file) => file.path) };
+}
+
 export async function executeGitHubEdit(args: {
   githubToken: string;
   geminiApiKey?: string;
@@ -320,7 +349,20 @@ export async function executeGitHubEdit(args: {
 
   progress("Verificando acesso ao GitHub...");
   await validateGitHubToken(token);
-  const branchData = await githubRequest<any>(token, `/repos/${repo}/branches/${encodeURIComponent(branch)}`);
+  let branchData: any;
+  try {
+    branchData = await githubRequest<any>(token, `/repos/${repo}/branches/${encodeURIComponent(branch)}`);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    if (!/Branch not found|Repositório, branch ou arquivo não encontrado/i.test(message)) throw error;
+    const existingRepo = await githubRequest<any>(token, `/repos/${repo}`);
+    const branches = await githubRequest<any[]>(token, `/repos/${repo}/branches?per_page=100`);
+    if (Array.isArray(branches) && branches.length === 0) {
+      const initialBranch = String(existingRepo.default_branch || branch || "main");
+      return scaffoldEmptyRepository({ token, provider, apiKey, model: args.aiModel, repository: repo, request, branch: initialBranch, progress });
+    }
+    throw new Error("A branch '" + branch + "' não existe no repositório " + repo + ". Selecione uma branch existente em Conexões ou use Criar projeto do zero. O repositório não está vazio, por isso não foi alterado.");
+  }
   const headSha = branchData?.commit?.sha;
   if (!headSha) throw new Error("Não foi possível identificar o último commit da branch.");
   progress("Lendo a estrutura do repositório...");
