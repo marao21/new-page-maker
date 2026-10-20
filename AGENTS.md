@@ -12,6 +12,6 @@
 <!-- LOVABLE:END -->
 
 - Registration classifies Supabase errors in a browser-safe helper and guards submissions synchronously; this prevents duplicate sends without retrying or bypassing provider quotas.
-- The editor uses a dedicated repository preview loader pinned to an immutable GitHub commit; static HTML runs sandboxed and Vite runs in a lazy-loaded Sandpack Node environment, never an AI reconstruction. Tool/config dot-folders and files that look like credentials are excluded from the preview rather than blocking it, so secrets never reach the sandbox.
+- The editor uses a dedicated repository preview loader pinned to an immutable GitHub commit; static HTML runs sandboxed and Vite runs in a lazy-loaded Sandpack Node environment, never an AI reconstruction. Expo/React Native repos run in Expo Snack's embedded web player via a POST form (files are too large for a URL); previews start automatically on repo selection. Tool/config dot-folders and files that look like credentials are excluded from the preview rather than blocking it, so secrets never reach the sandbox.
 - GitHub permission errors are explained by token type (GitHub App ghu_, fine-grained, classic) because GitHub Apps ignore OAuth scopes.
 - New GitHub projects validate the complete scaffold before creating a private initialized repository, then verify the branch after uploading; edit mode targets the selected repository and preserves its existing tree.
