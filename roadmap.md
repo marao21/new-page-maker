@@ -1,3 +1,5 @@
+- [ ] Colocar chat e prévia real lado a lado.
+- [ ] Conferir criação completa e edição do repositório selecionado, com testes.
 - [x] Corrigir classificação de erros e proteção contra cadastros duplicados sem alterar o visual.
 - [x] Testar envio único, espera e confirmação de e-mail (respostas simuladas, sem consumir a cota real).
 - [x] Informar a causa externa comprovada e as configurações ainda não verificadas no Supabase.
