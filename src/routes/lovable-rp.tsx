@@ -93,7 +93,7 @@ function LovableRpDemo() {
   const [openrouterApiKey, setOpenrouterApiKey] = useState("");
   const [aiProvider, setAiProvider] = useState<AIProvider>("gemini");
   const [aiModel, setAiModel] = useState("gemini-3.8-flash");
-  const [geminiModelOptions, setGeminiModelOptions] = useState<AIModelOption[]>([]);
+  const [geminiModels, setGeminiModels] = useState<AIModelOption[]>([]);
   const [openaiModels, setOpenaiModels] = useState<AIModelOption[]>([]);
   const [openrouterModels, setOpenrouterModels] = useState<AIModelOption[]>([]);
   const [testingOpenRouter, setTestingOpenRouter] = useState(false);
@@ -374,7 +374,7 @@ function LovableRpDemo() {
 
   function disconnectGemini() {
     window.sessionStorage.removeItem("lovable-rp-web-gemini-key");
-    setGeminiApiKey(""); setGeminiConnected(false); setGeminiModelOptions([]);
+    setGeminiApiKey(""); setGeminiConnected(false); setGeminiModels([]);
     if (aiProvider === "gemini") { setAiModel(""); window.sessionStorage.removeItem("lovable-rp-web-ai-model"); }
     setNotice("Chave Gemini desconectada e removida desta sessão.");
   }
@@ -406,7 +406,7 @@ function LovableRpDemo() {
     try {
       await validateGeminiApiKey(geminiApiKey);
       const models = await listGeminiModels(geminiApiKey);
-      setGeminiModelOptions(models);
+      setGeminiModels(models);
       if (models.length) { const preferred = models.find((model) => /gemini-3\.8-flash/i.test(model.id)) || models.find((model) => /flash/i.test(model.id)) || models[0]; setAiModel(preferred.id); window.sessionStorage.setItem("lovable-rp-web-ai-model", preferred.id); }
       window.sessionStorage.setItem("lovable-rp-web-ai-provider", "gemini");
       setAiProvider("gemini");
@@ -620,15 +620,15 @@ function LovableRpDemo() {
                     <div className="grid gap-2 sm:grid-cols-2">
                       <div>
                         <label htmlFor="rp-command-ai-provider" className="mb-1 block text-[11px] font-semibold text-pink-100/80">Provedor de IA</label>
-                        <select id="rp-command-ai-provider" value={aiProvider} onChange={(event) => { const value = event.target.value as AIProvider; setAiProvider(value); window.sessionStorage.setItem("lovable-rp-web-ai-provider", value); const list = value === "openai" ? openaiModels : value === "openrouter" ? openrouterModels : geminiModelOptions; const nextModel = list[0]?.id || (value === "gemini" ? "gemini-3.8-flash" : value === "openai" ? "gpt-4.1-mini" : ""); setAiModel(nextModel); window.sessionStorage.setItem("lovable-rp-web-ai-model", nextModel); }} className="w-full rounded-lg border border-white/15 bg-[#32152f] px-3 py-2 text-xs text-white outline-none focus:border-pink-300">
+                        <select id="rp-command-ai-provider" value={aiProvider} onChange={(event) => { const value = event.target.value as AIProvider; setAiProvider(value); window.sessionStorage.setItem("lovable-rp-web-ai-provider", value); const list = value === "openai" ? openaiModels : value === "openrouter" ? openrouterModels : geminiModels; const nextModel = list[0]?.id || (value === "gemini" ? "gemini-3.8-flash" : value === "openai" ? "gpt-4.1-mini" : ""); setAiModel(nextModel); window.sessionStorage.setItem("lovable-rp-web-ai-model", nextModel); }} className="w-full rounded-lg border border-white/15 bg-[#32152f] px-3 py-2 text-xs text-white outline-none focus:border-pink-300">
                           <option value="gemini">Google Gemini</option><option value="openai">OpenAI (GPT)</option><option value="openrouter">OpenRouter</option>
                         </select>
                       </div>
                       <div>
                         <label htmlFor="rp-command-ai-model" className="mb-1 block text-[11px] font-semibold text-pink-100/80">Modelo</label>
                         <select id="rp-command-ai-model" value={aiModel} onChange={(event) => { setAiModel(event.target.value); window.sessionStorage.setItem("lovable-rp-web-ai-model", event.target.value); }} className="w-full rounded-lg border border-white/15 bg-[#32152f] px-3 py-2 text-xs text-white outline-none focus:border-pink-300" disabled={!(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected)}>
-                          {!(aiProvider === "gemini" ? geminiModelOptions : aiProvider === "openai" ? openaiModels : openrouterModels).length && <option value={aiModel}>{aiModel || "Conecte a IA para listar modelos"}</option>}
-                          {(aiProvider === "gemini" ? geminiModelOptions : aiProvider === "openai" ? openaiModels : openrouterModels).map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
+                          {!(aiProvider === "gemini" ? geminiModels : aiProvider === "openai" ? openaiModels : openrouterModels).length && <option value={aiModel}>{aiModel || "Conecte a IA para listar modelos"}</option>}
+                          {(aiProvider === "gemini" ? geminiModels : aiProvider === "openai" ? openaiModels : openrouterModels).map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}
                         </select>
                       </div>
                     </div>
@@ -772,8 +772,8 @@ function LovableRpDemo() {
                       <div className="rounded-xl border border-slate-200 p-4 sm:col-span-2">
                         <h4 className="text-sm font-bold">Provedor e modelo usados nas edições</h4>
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                          <div><label htmlFor="rp-ai-provider" className="block text-xs font-semibold text-slate-600">Provedor de IA</label><select id="rp-ai-provider" value={aiProvider} onChange={(event) => { const value = event.target.value as AIProvider; setAiProvider(value); window.sessionStorage.setItem("lovable-rp-web-ai-provider", value); const list = value === "openai" ? openaiModels : value === "openrouter" ? openrouterModels : geminiModelOptions; if (list.length) setAiModel(list[0].id); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"><option value="gemini">Google Gemini</option><option value="openai">OpenAI API (GPT)</option><option value="openrouter">OpenRouter (vários modelos)</option></select></div>
-                          <div><label htmlFor="rp-ai-model" className="block text-xs font-semibold text-slate-600">Modelo</label><select id="rp-ai-model" value={aiModel} onChange={(event) => { setAiModel(event.target.value); window.sessionStorage.setItem("lovable-rp-web-ai-model", event.target.value); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"><option value={aiModel}>{aiModel}</option>{(aiProvider === "openai" ? openaiModels : aiProvider === "openrouter" ? openrouterModels : geminiModelOptions).filter((model) => model.id !== aiModel).map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><p className="mt-1 text-[11px] text-slate-500">A lista vem da API do provedor depois de conectar a chave.</p></div>
+                          <div><label htmlFor="rp-ai-provider" className="block text-xs font-semibold text-slate-600">Provedor de IA</label><select id="rp-ai-provider" value={aiProvider} onChange={(event) => { const value = event.target.value as AIProvider; setAiProvider(value); window.sessionStorage.setItem("lovable-rp-web-ai-provider", value); const list = value === "openai" ? openaiModels : value === "openrouter" ? openrouterModels : geminiModels; if (list.length) setAiModel(list[0].id); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"><option value="gemini">Google Gemini</option><option value="openai">OpenAI API (GPT)</option><option value="openrouter">OpenRouter (vários modelos)</option></select></div>
+                          <div><label htmlFor="rp-ai-model" className="block text-xs font-semibold text-slate-600">Modelo</label><select id="rp-ai-model" value={aiModel} onChange={(event) => { setAiModel(event.target.value); window.sessionStorage.setItem("lovable-rp-web-ai-model", event.target.value); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"><option value={aiModel}>{aiModel}</option>{(aiProvider === "openai" ? openaiModels : aiProvider === "openrouter" ? openrouterModels : geminiModels).filter((model) => model.id !== aiModel).map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><p className="mt-1 text-[11px] text-slate-500">A lista vem da API do provedor depois de conectar a chave.</p></div>
                         </div>
                       </div>
                       <div className="rounded-xl border border-emerald-200 bg-emerald-50/50 p-4 sm:col-span-2">
