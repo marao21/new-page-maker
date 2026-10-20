@@ -14,13 +14,225 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      lovable_rp_activity: {
+        Row: {
+          command_id: string | null
+          created_at: string
+          event_type: string
+          id: string
+          message: string
+          owner_id: string
+          project_id: string | null
+        }
+        Insert: {
+          command_id?: string | null
+          created_at?: string
+          event_type: string
+          id?: string
+          message: string
+          owner_id: string
+          project_id?: string | null
+        }
+        Update: {
+          command_id?: string | null
+          created_at?: string
+          event_type?: string
+          id?: string
+          message?: string
+          owner_id?: string
+          project_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lovable_rp_activity_command_id_fkey"
+            columns: ["command_id"]
+            isOneToOne: false
+            referencedRelation: "lovable_rp_commands"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "lovable_rp_activity_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "lovable_rp_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lovable_rp_commands: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          owner_id: string
+          project_id: string | null
+          prompt: string
+          result: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          owner_id: string
+          project_id?: string | null
+          prompt: string
+          result?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          owner_id?: string
+          project_id?: string | null
+          prompt?: string
+          result?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lovable_rp_commands_project_id_fkey"
+            columns: ["project_id"]
+            isOneToOne: false
+            referencedRelation: "lovable_rp_projects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lovable_rp_connections: {
+        Row: {
+          created_at: string
+          display_name: string
+          id: string
+          metadata: Json
+          owner_id: string
+          provider: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          display_name: string
+          id?: string
+          metadata?: Json
+          owner_id: string
+          provider: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string
+          id?: string
+          metadata?: Json
+          owner_id?: string
+          provider?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lovable_rp_profiles: {
+        Row: {
+          access_status: string
+          created_at: string
+          email: string | null
+          full_name: string | null
+          id: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          access_status?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id: string
+          role?: string
+          updated_at?: string
+        }
+        Update: {
+          access_status?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string | null
+          id?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lovable_rp_projects: {
+        Row: {
+          branch: string
+          created_at: string
+          id: string
+          name: string
+          owner_id: string
+          repository_full_name: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          branch?: string
+          created_at?: string
+          id?: string
+          name: string
+          owner_id: string
+          repository_full_name?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          branch?: string
+          created_at?: string
+          id?: string
+          name?: string
+          owner_id?: string
+          repository_full_name?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      lovable_rp_settings: {
+        Row: {
+          default_model: string | null
+          default_provider: string
+          owner_id: string
+          selected_branch: string
+          selected_repository: string | null
+          updated_at: string
+        }
+        Insert: {
+          default_model?: string | null
+          default_provider?: string
+          owner_id: string
+          selected_branch?: string
+          selected_repository?: string | null
+          updated_at?: string
+        }
+        Update: {
+          default_model?: string | null
+          default_provider?: string
+          owner_id?: string
+          selected_branch?: string
+          selected_repository?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      lovable_rp_is_admin: { Args: never; Returns: boolean }
+      lovable_rp_is_approved: { Args: never; Returns: boolean }
     }
     Enums: {
       [_ in never]: never
