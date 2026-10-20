@@ -623,11 +623,6 @@ function LovableRpDemo() {
     } finally { setExecuting(false); }
   }
 
-  useEffect(() => {
-    if (activeNav !== "Visão geral" || !githubToken || !selectedRepository || !selectedBranch) return;
-    void loadGithubSourcePreview();
-  }, [activeNav, githubToken, selectedRepository, selectedBranch]);
-
   const selectedRepoOption = repoOptions.find((repo) => repo.full_name === selectedRepository);
   const currentProject = projects[0] ?? (selectedRepoOption ? { id: "github", name: selectedRepoOption.name, repository_full_name: selectedRepoOption.full_name, branch: selectedBranch || selectedRepoOption.default_branch, status: "active" } : { id: "empty", name: "Nenhum projeto conectado", repository_full_name: null, branch: "—", status: "empty" });
   const projectCount = databaseStatus === "Supabase conectado" ? projects.length : repoOptions.length ? 1 : 0;
@@ -722,76 +717,12 @@ function LovableRpDemo() {
             </div>
 
             {activeNav === "Visão geral" && (
-              <section className="mb-7 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-                <div className="border-b border-slate-100 p-4 sm:p-5">
-                  <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <h3 className="font-bold">Prévia do sistema</h3>
-                      <p className="mt-1 text-sm text-slate-500">Escolha o repositório e a branch. A prévia será carregada aqui.</p>
-                    </div>
-                    <button type="button" onClick={() => setActiveNav("Prévia")} className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold hover:bg-slate-50">Abrir prévia completa</button>
-                  </div>
-                  <form onSubmit={(event) => {
-                    event.preventDefault();
-                    const raw = previewInput.trim();
-                    if (!raw) { setNotice("Informe a URL publicada do projeto para mostrar o sistema completo."); return; }
-                    let parsed: URL;
-                    try { parsed = new URL(raw.startsWith("http://") || raw.startsWith("https://") ? raw : "https://" + raw); }
-                    catch { setNotice("Informe uma URL válida, por exemplo https://seu-projeto.vercel.app"); return; }
-                    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") { setNotice("Use uma URL HTTP ou HTTPS."); return; }
-                    setPreviewUrl(parsed.toString());
-                    setPreviewInput(parsed.toString());
-                    setGithubPreviewHtml("");
-                    setGithubPreviewMessage("Versão publicada selecionada para prévia.");
-                    window.sessionStorage.setItem("lovable-rp-web-preview-url", parsed.toString());
-                  }} className="mb-3 flex flex-col gap-2 sm:flex-row">
-                    <input aria-label="URL publicada para prévia na tela inicial" value={previewInput} onChange={(event) => setPreviewInput(event.target.value)} placeholder="URL publicada: https://seu-projeto.vercel.app" className="min-w-0 flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400" />
-                    <button type="submit" className="rounded-xl border border-slate-200 px-4 py-2.5 text-xs font-bold hover:bg-slate-50">Mostrar site publicado</button>
-                  </form>
-                  <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_180px_auto]">
-                    <div>
-                      <label htmlFor="rp-overview-repository" className="mb-1 block text-xs font-semibold text-slate-600">Repositório GitHub</label>
-                      <select id="rp-overview-repository" value={selectedRepository} onChange={(event) => {
-                        const repo = repoOptions.find((item) => item.full_name === event.target.value);
-                        setSelectedRepository(event.target.value);
-                        setSelectedBranch(repo?.default_branch || "main");
-                        setGithubPreviewHtml("");
-                        setGithubPreviewMessage("");
-                        window.sessionStorage.setItem("lovable-rp-web-repository", event.target.value);
-                        window.sessionStorage.setItem("lovable-rp-web-branch", repo?.default_branch || "main");
-                      }} disabled={!githubToken || !repoOptions.length} className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-pink-400 disabled:bg-slate-50">
-                        <option value="">{githubToken ? "Selecione um repositório" : "Conecte o GitHub primeiro"}</option>
-                        {repoOptions.map((repo) => <option key={repo.full_name} value={repo.full_name}>{repo.full_name}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <label htmlFor="rp-overview-branch" className="mb-1 block text-xs font-semibold text-slate-600">Branch</label>
-                      <input id="rp-overview-branch" value={selectedBranch} onChange={(event) => {
-                        setSelectedBranch(event.target.value);
-                        setGithubPreviewHtml("");
-                        setGithubPreviewMessage("");
-                        window.sessionStorage.setItem("lovable-rp-web-branch", event.target.value);
-                      }} placeholder="main" className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-pink-400" />
-                    </div>
-                    <div className="flex items-end">
-                      <button type="button" onClick={() => void loadGithubSourcePreview()} disabled={githubPreviewLoading || !githubToken || !selectedRepository || !selectedBranch} className="w-full rounded-xl bg-pink-600 px-4 py-2.5 text-xs font-bold text-white hover:bg-pink-700 disabled:cursor-not-allowed disabled:opacity-50">
-                        {githubPreviewLoading ? "Carregando..." : "Atualizar prévia"}
-                      </button>
-                    </div>
-                  </div>
+              <section className="mb-7">
+                <div className="mb-4">
+                  <h3 className="text-lg font-bold">Crie e visualize antes de hospedar</h3>
+                  <p className="mt-1 text-sm leading-6 text-slate-500">Você não precisa ter Vercel, domínio ou repositório pronto. Descreva o site ou sistema, gere uma prévia local e ajuste o visual antes de publicar ou enviar os arquivos ao GitHub.</p>
                 </div>
-                {githubPreviewMessage && <p className="border-b border-slate-100 bg-slate-50 px-4 py-3 text-xs leading-5 text-slate-600">{githubPreviewMessage}</p>}
-                {githubPreviewHtml ? (
-                  <iframe title="Prévia do sistema a partir do GitHub" srcDoc={githubPreviewHtml} sandbox="allow-scripts allow-forms allow-popups" className="h-[65vh] min-h-[420px] w-full bg-white" />
-                ) : previewUrl ? (
-                  <iframe title="Prévia publicada do sistema" src={previewUrl} loading="lazy" referrerPolicy="strict-origin-when-cross-origin" sandbox="allow-scripts allow-forms allow-same-origin allow-popups allow-downloads" className="h-[65vh] min-h-[420px] w-full bg-white" />
-                ) : (
-                  <div className="flex min-h-[230px] flex-col items-center justify-center px-5 py-8 text-center">
-                    <div className="mb-3 rounded-xl bg-pink-50 p-3 text-pink-600"><Play className="h-6 w-6" /></div>
-                    <p className="font-semibold">A prévia do seu projeto aparecerá aqui</p>
-                    <p className="mt-1 max-w-xl text-sm leading-6 text-slate-500">{githubToken ? "Escolha o repositório e clique em Atualizar prévia para tentar ler o HTML. Para sistemas React/Vite, informe a URL publicada acima: o código-fonte do GitHub não pode ser executado diretamente nesta janela." : "Conecte o GitHub em Conexões para carregar os repositórios. Você também pode informar a URL publicada acima."}</p>
-                  </div>
-                )}
+                <LocalPreviewBuilder />
               </section>
             )}
             <section hidden={activeNav !== "Visão geral" && activeNav !== "Comandos"} className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-br from-[#24152f] via-[#3b1740] to-[#6d174e] p-5 text-white shadow-xl shadow-pink-100 sm:p-8">
