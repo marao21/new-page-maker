@@ -103,3 +103,14 @@ describe("GitHub permission errors and preview privacy", () => {
     expect(preview.files["/.claude/settings.local.json"]).toBeUndefined();
   });
 });
+
+describe("Expo repositories", () => {
+  it("detects an Expo app without index.html and sends only source files to Snack", async () => {
+    const { previewKind, snackPayload } = await import("@/lib/github-preview");
+    const files = { "/package.json": JSON.stringify({ dependencies: { expo: "~51.0.0", react: "18", "expo-sensors": "~13" } }), "/App.js": "export default () => null", "/README.md": "x", "/assets/icon.png": "data:image/png;base64,AA" };
+    expect(previewKind(files)).toBe("expo");
+    const payload = snackPayload(files);
+    expect(Object.keys(payload.files)).toEqual(["App.js"]);
+    expect(payload.dependencies).toEqual(["expo-sensors"]);
+  });
+});
