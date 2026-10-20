@@ -19,6 +19,33 @@
   --destructive: #ef4444;
 }
 
+@theme inline {
+  --color-background: var(--background);
+  --color-card: var(--card);
+  --color-foreground: var(--foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-input: var(--border);
+  --color-accent: var(--accent-light);
+  --color-accent-foreground: var(--foreground);
+  --color-ring: var(--primary);
+}
+
+.rp-editor { display: grid; grid-template-columns: minmax(320px, 380px) minmax(0, 1fr); gap: 20px; align-items: stretch; }
+.rp-preview { height: max(720px, calc(100dvh - 190px)); }
+.rp-preview-mobile { max-width: 390px; height: 100%; }
+.rp-preview .sp-wrapper, .rp-preview .sp-layout, .rp-preview .sp-preview { height: 100%; }
+.rp-preview .sp-layout { border: 0; border-radius: 0; }
+.rp-chat { background: var(--card); border: 1px solid var(--border); border-radius: 8px; padding: 20px; }
+.rp-chat select, .rp-chat input, .rp-chat textarea { background: var(--surface); color: var(--foreground); border: 1px solid var(--border); border-radius: 6px; }
+.rp-chat :is(select,input,textarea):disabled { opacity: .6; }
+.rp-chat textarea { min-height: 180px; }
+.rp-workspace-heading { display: none; }
+@media (max-width: 1099px) { .rp-editor { grid-template-columns: minmax(280px, 340px) minmax(0,1fr); gap: 12px; } }
+@media (max-width: 767px) { .rp-editor { grid-template-columns: minmax(0,1fr); } .rp-preview { height: 720px; } }
+
 html {
   scroll-behavior: smooth;
   color-scheme: light;
