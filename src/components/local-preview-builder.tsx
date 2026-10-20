@@ -45,11 +45,11 @@ export function LocalPreviewBuilder({ githubToken = "", repository = "", branch 
     const base = entry.includes("/") ? entry.slice(0, entry.lastIndexOf("/") + 1) : "";
     const resolve = (ref: string) => { const clean = ref.replace(/^\.\//, "").replace(/^\//, ""); return (ref.startsWith("/") ? "" : base) + clean; };
     for (const match of [...page.matchAll(/<link[^>]+href=["']([^"':]+\.css)["'][^>]*>/gi)]) {
-      const css = await fetchRepoText(headers, resolve(match[1]));
+      const css = await fetchRepoText(headers, resolve(match[1] || ""));
       if (css != null) page = page.replace(match[0], "<style>" + css + "</style>");
     }
     for (const match of [...page.matchAll(/<script([^>]*)src=["']([^"':]+\.js)["']([^>]*)><\/script>/gi)]) {
-      const js = await fetchRepoText(headers, resolve(match[2]));
+      const js = await fetchRepoText(headers, resolve(match[2] || ""));
       if (js != null) page = page.replace(match[0], "<script>" + js.replace(/<\/script/gi, "<\\/script") + "</script>");
     }
     const rawBase = "https://raw.githubusercontent.com/" + repository + "/" + branch + "/" + base;
