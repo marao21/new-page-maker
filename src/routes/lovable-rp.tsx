@@ -496,9 +496,46 @@ function LovableRpDemo() {
       const response = await fetch(base + "/contents/index.html?ref=" + branch, { headers });
       const file = await response.json().catch(() => ({}));
       if (!response.ok || typeof file.content !== "string") {
-        throw new Error(response.status === 404
-          ? "O repositório não tem index.html na raiz desta branch. Isso é comum em projetos que não são HTML estático. Informe a URL publicada acima para exibir o sistema completo; a fonte React/Vite precisa ser compilada."
-          : (file.message || "Não foi possível ler index.html do GitHub."));
+        if (response.status === 404) {
+          setGithubPreviewMessage("Não é um HTML estático. Procurando automaticamente a URL da última publicação desse repositório...");
+          // Tenta descobrir a URL do deploy nos status/checks do commit, sem exigir que a pessoa saiba qual arquivo iniciar.
+          const statusResponse = await fetch(base + "/commits/" + branch + "/status", { headers });
+          const statusData = await statusResponse.json().catch(() => ({}));
+          const checksResponse = await fetch(base + "/commits/" + branch + "/check-runs", { headers });
+          const checksData = await checksResponse.json().catch(() => ({}));
+          const candidates: string[] = [];
+          for (const item of (Array.isArray(statusData?.statuses) ? statusData.statuses : [])) {
+            for (const value of [item?.target_url, item?.context?.details_url]) {
+              if (typeof value === "string" && /^https?:\/\//i.test(value)) candidates.push(value);
+            }
+          }
+          for (const item of (Array.isArray(checksData?.check_runs) ? checksData.check_runs : [])) {
+            for (const value of [item?.details_url, item?.output?.annotations_url]) {
+              if (typeof value === "string" && /^https?:\/\//i.test(value)) candidates.push(value);
+            }
+          }
+          const deployUrl = candidates.find((value) => /https?:\/\/[^\s"'<>]+\.(?:vercel\.app|netlify\.app|lovable\.app|github\.io)(?:[/:?#][^\s"'<>]*)?/i.test(value));
+          if (deployUrl) {
+            setPreviewUrl(deployUrl);
+            setPreviewInput(deployUrl);
+            window.sessionStorage.setItem("lovable-rp-web-preview-url", deployUrl);
+            setGithubPreviewMessage("Encontrei um endereço de publicação nos checks do GitHub. Carregando a aplicação publicada...");
+            return;
+          }
+          // Sem HTML estático nem URL de publicação disponível nos checks, informa claramente que falta build/deploy.
+          const packageResponse = await fetch(base + "/contents/package.json?ref=" + branch, { headers });
+          const packageFile = await packageResponse.json().catch(() => ({}));
+          let framework = "projeto de código-fonte";
+          if (packageResponse.ok && typeof packageFile.content === "string") {
+            try {
+              const pkg = JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(packageFile.content.replace(/\s/g, "")), (character) => character.charCodeAt(0))));
+              const deps = { ...(pkg.dependencies || {}), ...(pkg.devDependencies || {}) };
+              framework = deps.vite ? "projeto Vite" : deps.next ? "projeto Next.js" : deps.react ? "projeto React" : "projeto com package.json";
+            } catch { /* mantém a identificação genérica */ }
+          }
+          throw new Error("Encontrei um " + framework + ", mas o GitHub não forneceu uma URL de publicação nos checks desse commit. A prévia precisa executar o build do projeto; a tela não deve tentar abrir src/main.tsx diretamente como se fosse HTML.");
+        }
+        throw new Error(file.message || "Não foi possível ler index.html do GitHub.");
       }
       const bytes = Uint8Array.from(atob(file.content.replace(/\s/g, "")), (character) => character.charCodeAt(0));
       let html = new TextDecoder().decode(bytes);
