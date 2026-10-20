@@ -27,6 +27,21 @@ function safeRepoName(value: string) {
   return repo;
 }
 
+/** GitHub App tokens (ghu_) ignore OAuth scopes: permissions come from the App settings and its installation. */
+export function githubPermissionMessage(token: string, detail: string) {
+  const t = token.trim();
+  if (t.startsWith("ghu_") || /by integration/i.test(detail)) {
+    return "O GitHub foi conectado por um GitHub App que não tem permissão de gravação neste repositório (o escopo \"repo\" não vale para GitHub Apps). " +
+      "1) No GitHub, abra Settings → Developer settings → GitHub Apps → seu aplicativo → Permissions and events e defina Contents: Read and write e Administration: Read and write (necessário para criar repositórios). Salve. " +
+      "2) Abra Settings → Applications → Installed GitHub Apps → seu aplicativo, aceite as novas permissões e escolha \"All repositories\". " +
+      "3) Aqui em Conexões, desconecte e conecte o GitHub de novo. Alternativa rápida: cole um token clássico (ghp_) criado com o escopo repo. Detalhe: " + detail;
+  }
+  if (t.startsWith("github_pat_") || /personal access token/i.test(detail)) {
+    return "Seu token do GitHub não tem permissão para esta operação. Edite o token em Settings → Developer settings → Fine-grained tokens: em Repository access escolha \"All repositories\" e dê Contents: Read and write e Administration: Read and write. Depois conecte de novo. Detalhe: " + detail;
+  }
+  return "A autorização atual do GitHub não tem permissão para esta operação. Gere um token clássico com o escopo repo e conecte de novo; se o repositório for de uma organização, o administrador pode precisar aprovar o acesso. Detalhe: " + detail;
+}
+
 async function githubRequest<T>(token: string, path: string, init: RequestInit = {}): Promise<T> {
   const response = await fetch(`${GITHUB_API}${path}`, {
     ...init,
@@ -49,7 +64,7 @@ async function githubRequest<T>(token: string, path: string, init: RequestInit =
       const scopes = response.headers.get("x-oauth-scopes");
       if (remaining === "0") throw new Error("O limite de requisições da API do GitHub foi atingido. Aguarde a renovação do limite e tente novamente.");
       if (/rate limit/i.test(detail)) throw new Error("O GitHub limitou temporariamente as requisições. Aguarde alguns minutos e tente novamente. Detalhe: " + detail);
-      if (/resource not accessible by integration|insufficient permissions/i.test(detail)) throw new Error("A autorização atual do GitHub não tem permissão para esta operação. Reconecte o GitHub e autorize o escopo repo; se for uma organização, o administrador pode precisar aprovar o aplicativo. Detalhe: " + detail);
+      if (/resource not accessible|insufficient permissions/i.test(detail)) throw new Error(githubPermissionMessage(token, detail));
       if (/name already exists|already exists/i.test(detail)) throw new Error("Já existe um repositório com esse nome na sua conta. Escolha outro nome. Detalhe: " + detail);
       throw new Error("O GitHub recusou a operação (HTTP 403). " + detail + (scopes ? " Escopos autorizados: " + scopes + "." : " Verifique se o OAuth App tem o escopo repo e se há políticas da organização bloqueando a criação."));
     }
