@@ -72,7 +72,8 @@ export async function validateGitHubToken(token: string) {
 export async function validateGeminiApiKey(apiKey: string) {
   if (!apiKey.trim()) throw new Error("Informe uma chave da API Gemini.");
   const models = await listGeminiModels(apiKey);
-  const preferred = models.find((model) => /gemini-3\.8-flash/i.test(model.id)) || models.find((model) => /flash/i.test(model.id)) || models[0];
+  const textModels = models.filter((model) => !/(image|tts|audio|live|embedding|vision|veo|imagen)/i.test(model.id));
+  const preferred = textModels.find((model) => /gemini-3\.8-flash/i.test(model.id)) || textModels.find((model) => /flash/i.test(model.id)) || textModels[0] || models[0];
   if (!preferred) throw new Error("A chave foi aceita, mas não há modelos Gemini compatíveis com geração de texto.");
   await callAI("gemini", apiKey, 'Responda somente JSON: {"ok":true,"message":"conectado"}.', preferred.id);
   return true;
@@ -181,7 +182,9 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
     catch { throw new Error("A resposta da OpenAI não veio em JSON válido. Tente novamente."); }
   }
 
-  // Se o modelo selecionado estiver temporariamente sobrecarregado, tente automaticamente outros modelos de texto compatíveis.\n  const geminiFallbacks = [GEMINI_MODEL, "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite", "gemini-flash-latest"];\n  const geminiModels = [...new Set([selectedModel, ...geminiFallbacks].filter((model): model is string => !!model))];
+  // Se o modelo selecionado estiver sobrecarregado ou indisponível, tenta outros modelos de texto.
+  const geminiFallbacks = [GEMINI_MODEL, "gemini-flash-latest", "gemini-3.6-flash", "gemini-3.5-flash-lite", "gemini-3.1-flash-lite"];
+  const geminiModels = [...new Set([selectedModel, ...geminiFallbacks].filter((model): model is string => !!model))];
   let lastStatus = 0;
   let lastMessage = "";
 
@@ -203,7 +206,7 @@ async function callAI(provider: AIProvider, apiKey: string, prompt: string, sele
     }
     lastStatus = response.status;
     lastMessage = data?.error?.message || "Gemini HTTP " + response.status;
-    if (response.status === 429 || response.status === 500 || response.status === 502 || response.status === 503 || response.status === 504) continue;
+    if (response.status === 404 || response.status === 429 || response.status === 500 || response.status === 502 || response.status === 503 || response.status === 504) continue;
     if (response.status === 401 || response.status === 403) throw new Error("A chave Gemini foi recusada: " + lastMessage);
     throw new Error("Erro da API Gemini (HTTP " + response.status + "): " + lastMessage);
   }
@@ -359,7 +362,7 @@ export async function executeGitHubEdit(args: {
     const branches = await githubRequest<any[]>(token, `/repos/${repo}/branches?per_page=100`);
     if (Array.isArray(branches) && branches.length === 0) {
       const initialBranch = String(existingRepo.default_branch || branch || "main");
-      return scaffoldEmptyRepository({ token, provider, apiKey, model: args.aiModel, repository: repo, request, branch: initialBranch, progress });
+      return scaffoldEmptyRepository({ token, provider, apiKey, model: args.aiModel || "", repository: repo, request, branch: initialBranch, progress });
     }
     throw new Error("A branch '" + branch + "' não existe no repositório " + repo + ". Selecione uma branch existente em Conexões ou use Criar projeto do zero. O repositório não está vazio, por isso não foi alterado.");
   }

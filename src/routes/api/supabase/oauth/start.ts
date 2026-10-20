@@ -4,7 +4,7 @@ export const Route = createFileRoute("/api/supabase/oauth/start")({
   server: {
     handlers: {
       GET: async ({ request }) => {
-        const clientId = process.env.SUPABASE_OAUTH_CLIENT_ID?.trim();
+        const clientId = process.env["SUPABASE_OAUTH_CLIENT_ID"]?.trim();
         const isUuid = !!clientId && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clientId);
         if (!clientId || !isUuid) {
           return new Response(
@@ -13,7 +13,7 @@ export const Route = createFileRoute("/api/supabase/oauth/start")({
           );
         }
         const requestUrl = new URL(request.url);
-        const redirectUri = process.env.SUPABASE_OAUTH_REDIRECT_URI || new URL("/api/supabase/oauth/callback", requestUrl.origin).toString();
+        const redirectUri = process.env["SUPABASE_OAUTH_REDIRECT_URI"] || new URL("/api/supabase/oauth/callback", requestUrl.origin).toString();
         const stateBytes = crypto.getRandomValues(new Uint8Array(32));
         const state = Array.from(stateBytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
         const authorize = new URL("https://api.supabase.com/v1/oauth/authorize");

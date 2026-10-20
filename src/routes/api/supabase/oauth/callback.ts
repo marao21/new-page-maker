@@ -19,9 +19,9 @@ export const Route = createFileRoute("/api/supabase/oauth/callback")({
         const savedState = cookieValue(request, "lovable_rp_supabase_oauth_state");
         if (!code || !state || !savedState || state !== savedState) return fail("invalid_state");
 
-        const clientId = process.env.SUPABASE_OAUTH_CLIENT_ID;
-        const clientSecret = process.env.SUPABASE_OAUTH_CLIENT_SECRET;
-        const redirectUri = process.env.SUPABASE_OAUTH_REDIRECT_URI || new URL("/api/supabase/oauth/callback", url.origin).toString();
+        const clientId = process.env["SUPABASE_OAUTH_CLIENT_ID"];
+        const clientSecret = process.env["SUPABASE_OAUTH_CLIENT_SECRET"];
+        const redirectUri = process.env["SUPABASE_OAUTH_REDIRECT_URI"] || new URL("/api/supabase/oauth/callback", url.origin).toString();
         if (!clientId || !clientSecret) return fail("not_configured");
 
         try {

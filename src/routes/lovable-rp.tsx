@@ -241,7 +241,7 @@ function LovableRpDemo() {
           const { data: users, error: usersError } = await rpDb.from("lovable_rp_profiles").select("id,email,full_name,role,access_status").order("created_at", { ascending: false });
           if (!usersError) setAdminUsers(users ?? []);
         }
-        setActivity((commandResult.data ?? []).map((item) => ({
+        setActivity((commandResult.data ?? []).map((item: any) => ({
           id: item.id,
           title: item.prompt.slice(0, 70),
           detail: item.status === "completed" ? "Comando concluído" : item.status === "failed" ? "Falha registrada" : "Salvo no Supabase · ainda sem execução automática",
@@ -419,13 +419,14 @@ function LovableRpDemo() {
       // Carrega os modelos primeiro e só considera a chave conectada depois de validar um modelo compatível.
       const models = await listGeminiModels(key);
       if (!models.length) throw new Error("A chave foi recebida, mas a API Gemini não retornou modelos compatíveis com generateContent.");
-      const preferred = models.find((model) => /gemini-3\.8-flash/i.test(model.id))
-        || models.find((model) => /flash/i.test(model.id))
-        || models[0];
+      const textModels = models.filter((model) => !/(image|tts|audio|live|embedding|vision|veo|imagen)/i.test(model.id));
+      const preferred = textModels.find((model) => /gemini-3\.8-flash/i.test(model.id))
+        || textModels.find((model) => /flash/i.test(model.id))
+        || textModels[0] || models[0];
       setGeminiModelOptions(models);
-      setAiModel(preferred.id);
+      setAiModel(preferred?.id || "");
       await validateGeminiApiKey(key);
-      window.sessionStorage.setItem("lovable-rp-web-ai-model", preferred.id);
+      window.sessionStorage.setItem("lovable-rp-web-ai-model", preferred?.id || "");
       window.sessionStorage.setItem("lovable-rp-web-ai-provider", "gemini");
       window.sessionStorage.setItem("lovable-rp-web-gemini-key", key);
       setAiProvider("gemini");
@@ -450,9 +451,9 @@ function LovableRpDemo() {
         || models[0];
       setOpenaiConnected(true);
       setAiProvider("openai");
-      setAiModel(preferred.id);
+      setAiModel(preferred?.id || "");
       window.sessionStorage.setItem("lovable-rp-web-ai-provider", "openai");
-      window.sessionStorage.setItem("lovable-rp-web-ai-model", preferred.id);
+      window.sessionStorage.setItem("lovable-rp-web-ai-model", preferred?.id || "");
       window.sessionStorage.setItem("lovable-rp-web-openai-key", openaiApiKey.trim());
       setNotice("OpenAI conectada. " + models.length + " modelos encontrados; escolha o modelo na lista.");
     } catch (error) {
@@ -469,7 +470,7 @@ function LovableRpDemo() {
       const models = await listOpenRouterModels(openrouterApiKey);
       if (!models.length) throw new Error("Nenhum modelo de texto foi encontrado nessa conta OpenRouter.");
       setOpenrouterModels(models);
-      setAiModel(models[0].id);
+      setAiModel(models[0]?.id || "");
       setAiProvider("openrouter");
       window.sessionStorage.setItem("lovable-rp-web-ai-provider", "openrouter");
       setOpenrouterConnected(true);
@@ -722,7 +723,7 @@ function LovableRpDemo() {
                   <h3 className="text-lg font-bold">Crie e visualize antes de hospedar</h3>
                   <p className="mt-1 text-sm leading-6 text-slate-500">Você não precisa ter Vercel, domínio ou repositório pronto. Descreva o site ou sistema, gere uma prévia local e ajuste o visual antes de publicar ou enviar os arquivos ao GitHub.</p>
                 </div>
-                <LocalPreviewBuilder />
+                <LocalPreviewBuilder githubToken={githubToken} repository={selectedRepository} branch={selectedBranch} />
               </section>
             )}
             <section hidden={activeNav !== "Visão geral" && activeNav !== "Comandos"} className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-br from-[#24152f] via-[#3b1740] to-[#6d174e] p-5 text-white shadow-xl shadow-pink-100 sm:p-8">
@@ -818,7 +819,7 @@ function LovableRpDemo() {
                 )}
                 {activeNav === "Prévia" && (
                   <>
-                  <LocalPreviewBuilder />
+                  <LocalPreviewBuilder githubToken={githubToken} repository={selectedRepository} branch={selectedBranch} />
                   <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div><h3 className="font-bold">Prévia do projeto</h3><p className="mt-1 text-sm text-slate-500">Abra a versão publicada do seu projeto dentro deste painel.</p></div>
@@ -899,7 +900,7 @@ function LovableRpDemo() {
                       <div className="rounded-xl border border-slate-200 p-4 sm:col-span-2">
                         <h4 className="text-sm font-bold">Provedor e modelo usados nas edições</h4>
                         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                          <div><label htmlFor="rp-ai-provider" className="block text-xs font-semibold text-slate-600">Provedor de IA</label><select id="rp-ai-provider" value={aiProvider} onChange={(event) => { const value = event.target.value as AIProvider; setAiProvider(value); window.sessionStorage.setItem("lovable-rp-web-ai-provider", value); const list = value === "openai" ? openaiModels : value === "openrouter" ? openrouterModels : geminiModelOptions; if (list.length) setAiModel(list[0].id); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"><option value="gemini">Google Gemini</option><option value="openai">OpenAI API (GPT)</option><option value="openrouter">OpenRouter (vários modelos)</option></select></div>
+                          <div><label htmlFor="rp-ai-provider" className="block text-xs font-semibold text-slate-600">Provedor de IA</label><select id="rp-ai-provider" value={aiProvider} onChange={(event) => { const value = event.target.value as AIProvider; setAiProvider(value); window.sessionStorage.setItem("lovable-rp-web-ai-provider", value); const list = value === "openai" ? openaiModels : value === "openrouter" ? openrouterModels : geminiModelOptions; if (list.length) setAiModel(list[0]?.id || ""); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm"><option value="gemini">Google Gemini</option><option value="openai">OpenAI API (GPT)</option><option value="openrouter">OpenRouter (vários modelos)</option></select></div>
                           <div><label htmlFor="rp-ai-model" className="block text-xs font-semibold text-slate-600">Modelo</label><select id="rp-ai-model" value={aiModel} onChange={(event) => { setAiModel(event.target.value); window.sessionStorage.setItem("lovable-rp-web-ai-model", event.target.value); }} className="mt-1 w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm">{(aiProvider === "openai" ? openaiModels : aiProvider === "openrouter" ? openrouterModels : geminiModelOptions).map((model) => <option key={model.id} value={model.id}>{model.name}</option>)}</select><p className="mt-1 text-[11px] text-slate-500">A lista vem da API do provedor depois de conectar a chave.</p></div>
                         </div>
                       </div>
