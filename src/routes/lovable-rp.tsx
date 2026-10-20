@@ -408,20 +408,29 @@ function LovableRpDemo() {
   }
 
   async function handleTestGemini() {
-    if (!geminiApiKey.trim()) { setNotice("Cole sua chave da API Gemini."); return; }
+    const key = geminiApiKey.trim();
+    if (!key) { setNotice("Cole sua chave da API Gemini."); return; }
     setTestingGemini(true);
+    setNotice("");
     try {
-      await validateGeminiApiKey(geminiApiKey);
-      const models = await listGeminiModels(geminiApiKey);
+      // Carrega os modelos primeiro e só considera a chave conectada depois de validar um modelo compatível.
+      const models = await listGeminiModels(key);
+      if (!models.length) throw new Error("A chave foi recebida, mas a API Gemini não retornou modelos compatíveis com generateContent.");
+      const preferred = models.find((model) => /gemini-3\.8-flash/i.test(model.id))
+        || models.find((model) => /flash/i.test(model.id))
+        || models[0];
       setGeminiModels(models);
-      if (models.length) { const preferred = models.find((model) => /gemini-3\.8-flash/i.test(model.id)) || models.find((model) => /flash/i.test(model.id)) || models[0]; setAiModel(preferred.id); window.sessionStorage.setItem("lovable-rp-web-ai-model", preferred.id); }
+      setAiModel(preferred.id);
+      await validateGeminiApiKey(key);
+      window.sessionStorage.setItem("lovable-rp-web-ai-model", preferred.id);
       window.sessionStorage.setItem("lovable-rp-web-ai-provider", "gemini");
+      window.sessionStorage.setItem("lovable-rp-web-gemini-key", key);
       setAiProvider("gemini");
       setGeminiConnected(true);
-      window.sessionStorage.setItem("lovable-rp-web-gemini-key", geminiApiKey.trim());
-      setNotice("Gemini conectado. " + (models.length ? models.length + " modelos encontrados; escolha o modelo na lista." : "A chave foi validada, mas a API não retornou modelos compatíveis."));
+      setNotice("Gemini conectado. " + models.length + " modelos compatíveis encontrados.");
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : "Não foi possível testar a chave Gemini.");
+      setGeminiConnected(false);
+      setNotice(error instanceof Error ? error.message : "Não foi possível conectar a chave Gemini.");
     } finally { setTestingGemini(false); }
   }
 
