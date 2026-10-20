@@ -10,27 +10,31 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
-import { Route as LovableRpRouteImport } from './routes/lovable-rp'
 import { Route as LoginRouteImport } from './routes/login'
+import { Route as LovableRpRouteImport } from './routes/lovable-rp'
 import { Route as MembrosRouteImport } from './routes/membros'
 import { Route as PrivacidadeRouteImport } from './routes/privacidade'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as TermosRouteImport } from './routes/termos'
 import { Route as PedidoIdRouteImport } from './routes/pedido.$id'
+import { Route as ApiGithubOauthRouteImport } from './routes/api/github/oauth'
+import { Route as ApiSupabaseOauthCallbackRouteImport } from './routes/api/supabase/oauth/callback'
+import { Route as ApiSupabaseOauthStartRouteImport } from './routes/api/supabase/oauth/start'
+import { Route as ApiSupabaseOauthStatusRouteImport } from './routes/api/supabase/oauth/status'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
-const LovableRpRoute = LovableRpRouteImport.update({
-  id: '/lovable-rp',
-  path: '/lovable-rp',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
   path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableRpRoute = LovableRpRouteImport.update({
+  id: '/lovable-rp',
+  path: '/lovable-rp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MembrosRoute = MembrosRouteImport.update({
@@ -58,91 +62,133 @@ const PedidoIdRoute = PedidoIdRouteImport.update({
   path: '/pedido/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiGithubOauthRoute = ApiGithubOauthRouteImport.update({
+  id: '/api/github/oauth',
+  path: '/api/github/oauth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSupabaseOauthCallbackRoute =
+  ApiSupabaseOauthCallbackRouteImport.update({
+    id: '/api/supabase/oauth/callback',
+    path: '/api/supabase/oauth/callback',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const ApiSupabaseOauthStartRoute = ApiSupabaseOauthStartRouteImport.update({
+  id: '/api/supabase/oauth/start',
+  path: '/api/supabase/oauth/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiSupabaseOauthStatusRoute = ApiSupabaseOauthStatusRouteImport.update({
+  id: '/api/supabase/oauth/status',
+  path: '/api/supabase/oauth/status',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/lovable-rp': typeof LovableRpRoute
   '/login': typeof LoginRoute
+  '/lovable-rp': typeof LovableRpRoute
   '/membros': typeof MembrosRoute
   '/privacidade': typeof PrivacidadeRoute
   '/register': typeof RegisterRoute
   '/termos': typeof TermosRoute
   '/pedido/$id': typeof PedidoIdRoute
+  '/api/github/oauth': typeof ApiGithubOauthRoute
+  '/api/supabase/oauth/callback': typeof ApiSupabaseOauthCallbackRoute
+  '/api/supabase/oauth/start': typeof ApiSupabaseOauthStartRoute
+  '/api/supabase/oauth/status': typeof ApiSupabaseOauthStatusRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/lovable-rp': typeof LovableRpRoute
   '/login': typeof LoginRoute
+  '/lovable-rp': typeof LovableRpRoute
   '/membros': typeof MembrosRoute
   '/privacidade': typeof PrivacidadeRoute
   '/register': typeof RegisterRoute
   '/termos': typeof TermosRoute
   '/pedido/$id': typeof PedidoIdRoute
+  '/api/github/oauth': typeof ApiGithubOauthRoute
+  '/api/supabase/oauth/callback': typeof ApiSupabaseOauthCallbackRoute
+  '/api/supabase/oauth/start': typeof ApiSupabaseOauthStartRoute
+  '/api/supabase/oauth/status': typeof ApiSupabaseOauthStatusRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
-  '/lovable-rp': typeof LovableRpRoute
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
+  '/lovable-rp': typeof LovableRpRoute
   '/membros': typeof MembrosRoute
   '/privacidade': typeof PrivacidadeRoute
   '/register': typeof RegisterRoute
   '/termos': typeof TermosRoute
   '/pedido/$id': typeof PedidoIdRoute
+  '/api/github/oauth': typeof ApiGithubOauthRoute
+  '/api/supabase/oauth/callback': typeof ApiSupabaseOauthCallbackRoute
+  '/api/supabase/oauth/start': typeof ApiSupabaseOauthStartRoute
+  '/api/supabase/oauth/status': typeof ApiSupabaseOauthStatusRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
-    | '/lovable-rp'
     | '/login'
+    | '/lovable-rp'
     | '/membros'
     | '/privacidade'
     | '/register'
     | '/termos'
     | '/pedido/$id'
+    | '/api/github/oauth'
+    | '/api/supabase/oauth/callback'
+    | '/api/supabase/oauth/start'
+    | '/api/supabase/oauth/status'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
-    | '/lovable-rp'
     | '/login'
+    | '/lovable-rp'
     | '/membros'
     | '/privacidade'
     | '/register'
     | '/termos'
     | '/pedido/$id'
+    | '/api/github/oauth'
+    | '/api/supabase/oauth/callback'
+    | '/api/supabase/oauth/start'
+    | '/api/supabase/oauth/status'
   id:
     | '__root__'
-    | '/lovable-rp'
     | '/'
     | '/login'
+    | '/lovable-rp'
     | '/membros'
     | '/privacidade'
     | '/register'
     | '/termos'
     | '/pedido/$id'
+    | '/api/github/oauth'
+    | '/api/supabase/oauth/callback'
+    | '/api/supabase/oauth/start'
+    | '/api/supabase/oauth/status'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  LovableRpRoute: typeof LovableRpRoute
   LoginRoute: typeof LoginRoute
+  LovableRpRoute: typeof LovableRpRoute
   MembrosRoute: typeof MembrosRoute
   PrivacidadeRoute: typeof PrivacidadeRoute
   RegisterRoute: typeof RegisterRoute
   TermosRoute: typeof TermosRoute
   PedidoIdRoute: typeof PedidoIdRoute
+  ApiGithubOauthRoute: typeof ApiGithubOauthRoute
+  ApiSupabaseOauthCallbackRoute: typeof ApiSupabaseOauthCallbackRoute
+  ApiSupabaseOauthStartRoute: typeof ApiSupabaseOauthStartRoute
+  ApiSupabaseOauthStatusRoute: typeof ApiSupabaseOauthStatusRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/lovable-rp': {
-      id: '/lovable-rp'
-      path: '/lovable-rp'
-      fullPath: '/lovable-rp'
-      preLoaderRoute: typeof LovableRpRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
@@ -155,6 +201,13 @@ declare module '@tanstack/react-router' {
       path: '/login'
       fullPath: '/login'
       preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable-rp': {
+      id: '/lovable-rp'
+      path: '/lovable-rp'
+      fullPath: '/lovable-rp'
+      preLoaderRoute: typeof LovableRpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/membros': {
@@ -192,18 +245,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PedidoIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/github/oauth': {
+      id: '/api/github/oauth'
+      path: '/api/github/oauth'
+      fullPath: '/api/github/oauth'
+      preLoaderRoute: typeof ApiGithubOauthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/supabase/oauth/callback': {
+      id: '/api/supabase/oauth/callback'
+      path: '/api/supabase/oauth/callback'
+      fullPath: '/api/supabase/oauth/callback'
+      preLoaderRoute: typeof ApiSupabaseOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/supabase/oauth/start': {
+      id: '/api/supabase/oauth/start'
+      path: '/api/supabase/oauth/start'
+      fullPath: '/api/supabase/oauth/start'
+      preLoaderRoute: typeof ApiSupabaseOauthStartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/supabase/oauth/status': {
+      id: '/api/supabase/oauth/status'
+      path: '/api/supabase/oauth/status'
+      fullPath: '/api/supabase/oauth/status'
+      preLoaderRoute: typeof ApiSupabaseOauthStatusRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  LovableRpRoute: LovableRpRoute,
   LoginRoute: LoginRoute,
+  LovableRpRoute: LovableRpRoute,
   MembrosRoute: MembrosRoute,
   PrivacidadeRoute: PrivacidadeRoute,
   RegisterRoute: RegisterRoute,
   TermosRoute: TermosRoute,
   PedidoIdRoute: PedidoIdRoute,
+  ApiGithubOauthRoute: ApiGithubOauthRoute,
+  ApiSupabaseOauthCallbackRoute: ApiSupabaseOauthCallbackRoute,
+  ApiSupabaseOauthStartRoute: ApiSupabaseOauthStartRoute,
+  ApiSupabaseOauthStatusRoute: ApiSupabaseOauthStatusRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
