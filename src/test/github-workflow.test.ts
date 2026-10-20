@@ -76,3 +76,30 @@ describe("GitHub create and edit modes", () => {
     expect(urls.some(url => url.endsWith("/secret"))).toBe(false);
   });
 });
+describe("GitHub permission errors and preview privacy", () => {
+  it("explains GitHub App permissions instead of the repo scope for integration tokens", async () => {
+    const { githubPermissionMessage } = await import("@/lib/lovable-rp-engine");
+    const msg = githubPermissionMessage("ghu_abc", "Resource not accessible by integration");
+    expect(msg).toContain("Contents: Read and write");
+    expect(msg).toContain("Administration: Read and write");
+    expect(msg).toContain("All repositories");
+  });
+  it("skips a file with a credential instead of blocking the whole preview", async () => {
+    const enc = (t: string) => ({ encoding: "base64", content: btoa(t) });
+    vi.stubGlobal("fetch", vi.fn(async (input: string) => {
+      if (input.includes("/branches/")) return json({ commit: { sha: "abc" } });
+      if (input.includes("/git/trees/")) return json({ truncated: false, tree: [
+        { type: "blob", path: "index.html", sha: "h", size: 10 },
+        { type: "blob", path: "config.json", sha: "c", size: 10 },
+        { type: "blob", path: ".claude/settings.local.json", sha: "x", size: 10 },
+      ] });
+      if (input.endsWith("/git/blobs/h")) return json(enc("<h1>Oi</h1>"));
+      if (input.endsWith("/git/blobs/c")) return json(enc('{"k":"ghp_secretvalue123"}'));
+      throw new Error("unexpected " + input);
+    }));
+    const preview = await loadRepositoryPreview("test", "owner/site", "main");
+    expect(preview.kind).toBe("static");
+    expect(preview.skipped).toEqual(["config.json"]);
+    expect(preview.files["/.claude/settings.local.json"]).toBeUndefined();
+  });
+});
