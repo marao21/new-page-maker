@@ -11,9 +11,10 @@ export function RepositoryPreviewPane({ githubToken, repository, branch, refresh
   const [loading, setLoading] = useState(false);
   const [reload, setReload] = useState(0);
   const [mobile, setMobile] = useState(false);
+  const [runtimeAllowed, setRuntimeAllowed] = useState(false);
   useEffect(() => {
     const controller = new AbortController();
-    setPreview(null); setError("");
+    setPreview(null); setError(""); setRuntimeAllowed(false);
     if (!githubToken || !repository) { setLoading(false); return () => controller.abort(); }
     setLoading(true);
     loadRepositoryPreview(githubToken, repository, branch, controller.signal).then(result => { if (!controller.signal.aborted) setPreview(result); }).catch(err => { if (!controller.signal.aborted) setError(err instanceof Error ? err.message : "Falha ao carregar a prévia."); }).finally(() => { if (!controller.signal.aborted) setLoading(false); });

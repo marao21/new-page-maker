@@ -42,6 +42,9 @@
 .rp-chat select, .rp-chat input, .rp-chat textarea { background: var(--surface); color: var(--foreground); border: 1px solid var(--border); border-radius: 6px; }
 .rp-chat :is(select,input,textarea):disabled { opacity: .6; }
 .rp-chat textarea { min-height: 180px; }
+.rp-chat button { transform: none; }
+.rp-nav { transform: none; }
+@media (max-width: 1023px) { .rp-nav { transform: translateX(-100%); } .rp-nav[data-open="true"] { transform: translateX(0); } }
 .rp-workspace-heading { display: none; }
 @media (max-width: 1099px) { .rp-editor { grid-template-columns: minmax(280px, 340px) minmax(0,1fr); gap: 12px; } }
 @media (max-width: 767px) { .rp-editor { grid-template-columns: minmax(0,1fr); } .rp-preview { height: 720px; } }

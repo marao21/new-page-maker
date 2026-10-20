@@ -655,7 +655,7 @@ function LovableRpDemo() {
         {mobileMenuOpen && (
           <button aria-label="Fechar menu" onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden" />
         )}
-        <aside className={`fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-slate-200 bg-white transition-transform lg:static lg:translate-x-0 ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <aside data-open={mobileMenuOpen} className={`rp-nav fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-slate-200 bg-white transition-transform lg:static lg:translate-x-0 ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
           <div className="flex h-[76px] items-center gap-3 border-b border-slate-100 px-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-pink-600 to-rose-500 text-white shadow-lg shadow-pink-200">
               <Bot className="h-6 w-6" />
@@ -732,7 +732,7 @@ function LovableRpDemo() {
             {(activeNav === "Visão geral" || activeNav === "Comandos") && <div className="rp-editor mb-6">
               <section aria-label="Chat do projeto" className="rp-chat min-w-0 text-foreground">
                 <div className="mb-5 flex items-center gap-2"><MessageSquareText className="h-5 w-5 text-primary"/><h2 className="font-bold">Chat do projeto</h2></div>
-                  <div className="mb-4 rounded-xl border border-border bg-background/[0.07] p-3">
+                  <div className="mb-4 border-b border-border pb-4">
                     <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                       <div><p className="text-xs font-bold text-muted">IA que vai executar esta tarefa</p><p className="mt-1 text-[11px] text-muted">Escolha o provedor e o modelo antes de enviar o pedido.</p></div>
                       <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "bg-background text-muted" : "bg-background text-muted"}`}>{(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) ? "Conectada" : "Precisa conectar"}</span>
@@ -752,7 +752,7 @@ function LovableRpDemo() {
                         </select>
                       </div>
                     </div>
-                    {!(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) && <Button type="button" onClick={() => setActiveNav("Conexões")} className="mt-2 text-[11px] font-bold text-muted underline underline-offset-2">Conectar ou testar esta IA em Conexões</Button>}
+                    {!(aiProvider === "gemini" ? geminiConnected : aiProvider === "openai" ? openaiConnected : openrouterConnected) && <Button variant="link" type="button" onClick={() => setActiveNav("Conexões")} className="mt-2 h-auto whitespace-normal px-0 text-xs">Conectar ou testar esta IA</Button>}
                   </div>
                   <div className="mb-4 flex flex-wrap gap-2" role="group" aria-label="Modo do projeto">
                     <Button type="button" disabled={executing} aria-pressed={commandMode === "edit"} variant={commandMode === "edit" ? "default" : "outline"} onClick={() => { setCommandMode("edit"); setCommandText(""); }} className="h-auto whitespace-normal text-xs">Editar projeto existente</Button>
