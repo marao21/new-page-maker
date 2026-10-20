@@ -419,9 +419,10 @@ function LovableRpDemo() {
       // Carrega os modelos primeiro e só considera a chave conectada depois de validar um modelo compatível.
       const models = await listGeminiModels(key);
       if (!models.length) throw new Error("A chave foi recebida, mas a API Gemini não retornou modelos compatíveis com generateContent.");
-      const preferred = models.find((model) => /gemini-3\.8-flash/i.test(model.id))
-        || models.find((model) => /flash/i.test(model.id))
-        || models[0];
+      const textModels = models.filter((model) => !/(image|tts|audio|live|embedding|vision|veo|imagen)/i.test(model.id));
+      const preferred = textModels.find((model) => /gemini-3\.8-flash/i.test(model.id))
+        || textModels.find((model) => /flash/i.test(model.id))
+        || textModels[0] || models[0];
       setGeminiModelOptions(models);
       setAiModel(preferred.id);
       await validateGeminiApiKey(key);
@@ -722,7 +723,7 @@ function LovableRpDemo() {
                   <h3 className="text-lg font-bold">Crie e visualize antes de hospedar</h3>
                   <p className="mt-1 text-sm leading-6 text-slate-500">Você não precisa ter Vercel, domínio ou repositório pronto. Descreva o site ou sistema, gere uma prévia local e ajuste o visual antes de publicar ou enviar os arquivos ao GitHub.</p>
                 </div>
-                <LocalPreviewBuilder />
+                <LocalPreviewBuilder githubToken={githubToken} repository={selectedRepository} branch={selectedBranch} />
               </section>
             )}
             <section hidden={activeNav !== "Visão geral" && activeNav !== "Comandos"} className="relative mb-7 overflow-hidden rounded-3xl bg-gradient-to-br from-[#24152f] via-[#3b1740] to-[#6d174e] p-5 text-white shadow-xl shadow-pink-100 sm:p-8">
@@ -818,7 +819,7 @@ function LovableRpDemo() {
                 )}
                 {activeNav === "Prévia" && (
                   <>
-                  <LocalPreviewBuilder />
+                  <LocalPreviewBuilder githubToken={githubToken} repository={selectedRepository} branch={selectedBranch} />
                   <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm xl:col-span-2">
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                       <div><h3 className="font-bold">Prévia do projeto</h3><p className="mt-1 text-sm text-slate-500">Abra a versão publicada do seu projeto dentro deste painel.</p></div>
