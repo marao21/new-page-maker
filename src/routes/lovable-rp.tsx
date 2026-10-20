@@ -655,7 +655,7 @@ function LovableRpDemo() {
         {mobileMenuOpen && (
           <button aria-label="Fechar menu" onClick={() => setMobileMenuOpen(false)} className="fixed inset-0 z-40 bg-slate-950/40 lg:hidden" />
         )}
-        <aside data-open={mobileMenuOpen} className={`rp-nav fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-slate-200 bg-white transition-transform lg:static lg:translate-x-0 ${mobileMenuOpen ? "translate-x-0" : "-translate-x-full"}`}>
+        <aside data-open={mobileMenuOpen} className="rp-nav fixed inset-y-0 left-0 z-50 flex w-[260px] flex-col border-r border-slate-200 bg-white transition-transform lg:static">
           <div className="flex h-[76px] items-center gap-3 border-b border-slate-100 px-5">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-pink-600 to-rose-500 text-white shadow-lg shadow-pink-200">
               <Bot className="h-6 w-6" />
