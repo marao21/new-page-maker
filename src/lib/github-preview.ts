@@ -1,6 +1,33 @@
-export type RepositoryPreview = { files: Record<string, string>; kind: "static" | "vite"; html?: string; revision: string; skipped?: string[] };
+export type RepositoryPreview = { files: Record<string, string>; kind: "static" | "vite" | "expo"; html?: string; dependencies?: string[]; revision: string; skipped?: string[] };
 
-export function previewKind(files: Record<string, string>): "static" | "vite" {
+function readPackage(files: Record<string, string>) {
+  try { return JSON.parse(files["/package.json"] || "{}"); } catch { return {}; }
+}
+
+/** Expo / React Native apps cannot run in a plain browser bundle; they run in Expo Snack's web player. */
+export function isExpoProject(files: Record<string, string>) {
+  const pkg = readPackage(files);
+  return Boolean(pkg.dependencies?.expo || pkg.dependencies?.["react-native"]);
+}
+
+const SNACK_BUILTINS = new Set(["expo", "react", "react-native", "react-dom", "react-native-web", "expo-status-bar", "@expo/vector-icons"]);
+
+/** Files and dependency names in the shape Expo Snack's embed form expects. */
+export function snackPayload(files: Record<string, string>) {
+  const snackFiles: Record<string, { type: "CODE"; contents: string }> = {};
+  for (const [path, contents] of Object.entries(files)) {
+    if (contents.startsWith("data:") || !/\.(jsx?|tsx?|json)$/i.test(path) || /^\/(package|package-lock|app|tsconfig|babel\.config|metro\.config)\.json$/i.test(path) || /^\/(babel|metro)\.config\.js$/i.test(path)) continue;
+    snackFiles[path.slice(1)] = { type: "CODE", contents };
+  }
+  const deps = Object.keys(readPackage(files).dependencies || {}).filter(name => !SNACK_BUILTINS.has(name));
+  return { files: snackFiles, dependencies: deps };
+}
+
+export function previewKind(files: Record<string, string>): "static" | "vite" | "expo" {
+  if (isExpoProject(files)) {
+    if (!files["/App.js"] && !files["/App.tsx"] && !files["/App.jsx"] && !files["/App.ts"]) throw new Error("Este app Expo usa uma estrutura de rotas que a prévia ainda não executa. É preciso um arquivo App.js na raiz.");
+    return "expo";
+  }
   const html = files["/index.html"] || "";
   if (!html) throw new Error("Não encontrei index.html na raiz. Este formato de projeto ainda não tem prévia disponível.");
   if (/type=["']module["']/i.test(html)) {
@@ -46,6 +73,7 @@ export async function loadRepositoryPreview(token: string, repository: string, b
     }));
   }
   const kind = previewKind(files);
+  if (kind === "expo") return { files, kind, revision, skipped, dependencies: snackPayload(files).dependencies };
   if (kind === "vite") {
     if (Object.values(files).some(content => content.startsWith("data:"))) throw new Error("A prévia Vite ainda não suporta arquivos binários locais. Use uma URL de prévia desse projeto.");
     return { files, kind, revision, skipped };
